@@ -3,6 +3,7 @@ package com.atharva.dealership.user;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
+import com.atharva.dealership.exception.EmailAlreadyExistsError;
 import com.atharva.dealership.exception.ValidationError;
 
 public class UserService {
@@ -27,6 +28,9 @@ public class UserService {
 
     public User register(RegisterUserRequest request) {
         validate(request);
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new EmailAlreadyExistsError("Email already exists: " + request.email());
+        }
 
         return registerUser(request);
     }

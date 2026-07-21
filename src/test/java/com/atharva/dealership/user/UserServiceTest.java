@@ -1,5 +1,7 @@
 package com.atharva.dealership.user;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
@@ -15,9 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
-import com.atharva.dealership.exception.DuplicateEmailError;
+import com.atharva.dealership.exception.EmailAlreadyExistsError;
 import com.atharva.dealership.exception.ValidationError;
-import java.util.Optional;
 
 /*
  * Assumed production API for the green step:
@@ -108,14 +109,14 @@ class UserServiceTest {
     }
 
     @Test
-    void registerWithExistingEmailThrowsDuplicateEmailErrorAndDoesNotCreateUser() {
+    void registerWithExistingEmailThrowsEmailAlreadyExistsErrorAndDoesNotCreateUser() {
         String email = "existing.user@example.com";
         RegisterUserRequest request = new RegisterUserRequest(email, "StrongPassword123!");
         User existingUser = new User(email, "$2a$10$existing-password");
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(existingUser));
 
-        assertThrows(DuplicateEmailError.class, () -> userService.register(request));
+        assertThrows(EmailAlreadyExistsError.class, () -> userService.register(request));
 
-        verify(userRepository, times(0)).create(any(User.class));
+        verify(userRepository, times(0)).save(any(User.class));
     }
 }

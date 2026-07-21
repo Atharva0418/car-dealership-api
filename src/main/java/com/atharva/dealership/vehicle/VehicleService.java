@@ -3,6 +3,7 @@ package com.atharva.dealership.vehicle;
 import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,16 @@ public class VehicleService {
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
         log.info("Vehicle persisted with id: {}", savedVehicle.getId());
         return savedVehicle;
+    }
+
+    public List<Vehicle> findAvailableVehicles() {
+        log.info("Starting available vehicle listing");
+        List<Vehicle> availableVehicles = vehicleRepository.findAll().stream()
+                .filter(vehicle -> vehicle.getQuantityInStock() != null)
+                .filter(vehicle -> vehicle.getQuantityInStock() > 0)
+                .toList();
+        log.info("Available vehicle listing completed successfully with {} vehicles", availableVehicles.size());
+        return availableVehicles;
     }
 
     private void validate(CreateVehicleRequest request) {

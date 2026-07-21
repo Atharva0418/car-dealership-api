@@ -5,6 +5,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,6 +16,7 @@ import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.exception.GlobalExceptionHandler;
 import com.atharva.dealership.exception.ValidationError;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -165,5 +168,36 @@ class VehicleControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(vehicleService, never()).create(any(CreateVehicleRequest.class));
+    }
+
+    @Test
+    void listAvailableVehiclesReturnsOkWithVehicleArray() throws Exception {
+        when(vehicleService.findAvailableVehicles()).thenReturn(List.of(
+                new Vehicle(42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5),
+                new Vehicle(43L, "Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 2)));
+
+        mockMvc.perform(get("/api/vehicles"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(42))
+                .andExpect(jsonPath("$[0].make").value("Toyota"))
+                .andExpect(jsonPath("$[0].model").value("Camry"))
+                .andExpect(jsonPath("$[0].category").value("Sedan"))
+                .andExpect(jsonPath("$[0].price").value(28000.00))
+                .andExpect(jsonPath("$[0].quantityInStock").value(5))
+                .andExpect(jsonPath("$[1].id").value(43));
+
+        verify(vehicleService, times(1)).findAvailableVehicles();
+    }
+
+    @Test
+    void listAvailableVehiclesWithNoMatchesReturnsEmptyArray() throws Exception {
+        when(vehicleService.findAvailableVehicles()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/vehicles"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+
+        verify(vehicleService, times(1)).findAvailableVehicles();
     }
 }

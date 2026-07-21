@@ -1,6 +1,7 @@
 package com.atharva.dealership.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,5 +34,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException error) {
         log.warn("Malformed request body: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request body is missing or malformed.");
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<String> handleDataAccessError(DataAccessException error) {
+        log.error("Vehicle data access error", error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Vehicle data could not be retrieved.");
     }
 }

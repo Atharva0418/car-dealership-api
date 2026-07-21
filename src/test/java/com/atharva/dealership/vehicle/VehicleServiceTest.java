@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -203,6 +204,30 @@ class VehicleServiceTest {
 
         verify(vehicleRepository, times(1)).save(any(Vehicle.class));
         assertEquals(0, result.getQuantityInStock());
+    }
+
+    @Test
+    void findAvailableVehiclesReturnsOnlyVehiclesWithPositiveStock() {
+        Vehicle availableVehicle = new Vehicle(
+                42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5);
+        Vehicle outOfStockVehicle = new Vehicle(
+                43L, "Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 0);
+        when(vehicleRepository.findAll()).thenReturn(List.of(availableVehicle, outOfStockVehicle));
+
+        List<Vehicle> result = vehicleService.findAvailableVehicles();
+
+        assertEquals(List.of(availableVehicle), result);
+        verify(vehicleRepository, times(1)).findAll();
+    }
+
+    @Test
+    void findAvailableVehiclesWithEmptyRepositoryReturnsEmptyList() {
+        when(vehicleRepository.findAll()).thenReturn(List.of());
+
+        List<Vehicle> result = vehicleService.findAvailableVehicles();
+
+        assertEquals(List.of(), result);
+        verify(vehicleRepository, times(1)).findAll();
     }
 
     private CreateVehicleRequest validRequestWithMake(String make) {

@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -29,6 +31,28 @@ public class VehicleService {
                 request.quantityInStock());
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
         log.info("Vehicle persisted with id: {}", savedVehicle.getId());
+        return savedVehicle;
+    }
+
+    public Vehicle update(Long id, CreateVehicleRequest request) {
+        log.info("Starting vehicle update for vehicle id: {}", id);
+        validate(request);
+
+        Vehicle existingVehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Vehicle update failed because vehicle id {} was not found", id);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found.");
+                });
+
+        Vehicle vehicle = new Vehicle(
+                existingVehicle.getId(),
+                request.make().trim(),
+                request.model().trim(),
+                request.category().trim(),
+                request.price(),
+                request.quantityInStock());
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        log.info("Vehicle update completed successfully for vehicle id: {}", savedVehicle.getId());
         return savedVehicle;
     }
 

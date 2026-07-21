@@ -1,25 +1,37 @@
 package com.atharva.dealership.exception;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationError.class)
     public ResponseEntity<String> handleAuthenticationError(AuthenticationError error) {
+        log.warn("Authentication error: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error.getMessage());
     }
 
     @ExceptionHandler(EmailAlreadyExistsError.class)
     public ResponseEntity<String> handleEmailAlreadyExists(EmailAlreadyExistsError error) {
+        log.warn("Email conflict: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error.getMessage());
     }
 
     @ExceptionHandler(ValidationError.class)
     public ResponseEntity<String> handleValidationError(ValidationError error) {
+        log.warn("Validation error: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error.getMessage());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException error) {
+        log.warn("Malformed request body: {}", error.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request body is missing or malformed.");
     }
 }

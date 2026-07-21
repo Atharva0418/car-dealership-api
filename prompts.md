@@ -1,6 +1,6 @@
 # Codex Prompt Log — Car Dealership API
 
-A running record of prompts used to drive this project via strict TDD (red-green-refactor). Organized by phase so future prompts can follow the same structure.
+A running record of prompts used to drive this project via strict TDD (red-green-refactor).
 
 ---
 
@@ -188,6 +188,91 @@ A running record of prompts used to drive this project via strict TDD (red-green
 > - Keep the changes limited to observability improvements.
 
 ---
+
+## 5. Login Endpoint
+
+**Goal:** Implement JWT-based login, then refactor the refresh token flow to be fully stateless.
+
+### 5a. Plan Prompts
+
+> I want to implement a login endpoint. It should support JWT-based authentication. Give a plan to implement this with a test-driven development approach.
+
+### 5b. Test Case Prompts (RED)
+
+> Follow this plan. Start by writing all failing test cases first. Do not write any implementation code yet. Only confirm the changes after I approve.
+
+### 5c. Implementation Prompts (GREEN)
+
+> All test cases are currently failing (red). Write the minimum production code needed to make them pass — nothing more. Do not apply any changes yet. Show me a diff-style preview (`--- current` / `+++ proposed`, with `+`/`-` markers) for every file you intend to create or modify. Do not run, save, commit, or confirm anything on your own. Wait for my explicit review and approval before writing to disk. If I request edits, regenerate the diff and wait again. After I approve and changes are applied, run the test suite and report the actual pass/fail result — don't assume success.
+
+### 5d. Refactor Prompts
+
+> Refactor the refresh token flow in `AuthService.java` (`com.atharva.dealership.auth`) to be **fully stateless**: refresh tokens should be self-contained signed JWTs with a 7-day expiration, with no database persistence, no `RefreshTokenRepository`, and no revocation mechanism. This is an intentional tradeoff — revocation is explicitly out of scope for this refactor.
+>
+> **Requirements:**
+>
+> 1. **Extend `JwtService`** to support refresh token generation and validation, mirroring the access token methods:
+>    - `generateRefreshToken(String subject)` — same structure as `generateAccessToken`, but using `refreshTokenExpirationSeconds` for the expiry claim. If the jjwt refactor from earlier is already in place, reuse `Jwts.builder()`; otherwise use the existing signing mechanism.
+>    - `extractRefreshSubject(String token)` / `isValidRefreshToken(String token)` — parse and validate a refresh token the same way access tokens are validated (signature, expiration), reusing existing private helpers where possible rather than duplicating logic.
+>    - Consider adding a `"type":"refresh"` (or similar) claim to both token types so a refresh token can't be replayed as an access token and vice versa. Validate this claim on parse for each respective method.
+>
+> 2. **Update `AuthService`:**
+>    - Remove `RefreshTokenRepository`, `RefreshToken` entity usage, `hashRefreshToken`, and the SHA-256/`HexFormat` hashing logic entirely — no longer needed since nothing is persisted.
+>    - Remove `generateRefreshToken()` (the `SecureRandom`/Base64 version) and the `secureRandom` field.
+>    - `issueTokens(User user)`: generate the refresh token via `jwtService.generateRefreshToken(user.getEmail())` instead of the random-bytes version. No DB save.
+>    - `refresh(String rawRefreshToken)`: replace the DB lookup/revocation-check logic with:
+>      - Validate the token via `jwtService.isValidRefreshToken(...)`, throwing `AuthenticationError(INVALID_REFRESH_TOKEN_MESSAGE)` if invalid or expired.
+>      - Extract the subject (email) and re-fetch the `User` via `userRepository.findByEmail(...)`, throwing the same error if the user no longer exists (e.g. deleted account).
+>      - Call `issueTokens(user)` and return the new `AuthResponse` as before.
+>      - Remove the `@Transactional` annotation from `refresh()` if nothing in the method touches the DB for writes anymore (keep it only if `findByEmail` needs it for other reasons — check).
+>
+> 3. **Delete now-unused code:**
+>    - `RefreshToken` entity class.
+>    - `RefreshTokenRepository` interface.
+>    - Any Flyway/Liquibase migration or schema definition for the refresh token table (leave a note/comment or a follow-up migration to drop the table if it already exists in deployed environments — don't silently leave orphaned schema).
+>    - Any Spring config or bean wiring referencing `RefreshTokenRepository`.
+>
+> 4. **Logging:** keep existing `log.info`/`log.warn`/`log.debug` statements at equivalent points (start of refresh, invalid token, success), adjusted for the new flow. Do not log token values.
+>
+> 5. **Tests:**
+>    - Update/replace `AuthService` tests that relied on `RefreshTokenRepository` mocks — remove those mocks and DB-interaction assertions.
+>    - Add/update tests:
+>      - valid refresh token round-trip issues new access+refresh tokens
+>      - expired refresh token is rejected
+>      - tampered/malformed refresh token is rejected
+>      - a refresh token used where an access token is expected (and vice versa) is rejected, if the `type` claim is added
+>      - refresh for a since-deleted user is rejected
+>    - Use the injected `Clock` to simulate expiration rather than `Thread.sleep`.
+>
+> 6. **Explicitly do not implement:** revocation, reuse detection, logout endpoints that invalidate tokens server-side, or a token blocklist. If a `logout` endpoint currently exists and relies on DB revocation, update it to be a client-side-only operation (i.e., the client discards the tokens) and note in a comment that server-side logout is not possible with this design.
+
+---
+
+# Vehicle:
+
+**Goal:** To add all functionalities related to vehicles.
+
+## 1. Add Vehicle Endpoint
+
+### 1a. Plan prompts:
+
+> This project is a car dealership inventory system. Now the authentication part is done, Its  time to implement the core functionalities.
+>
+>- Vehicles (Protected):
+>- ***POST /api/vehicles: Add a new vehicle.***
+>- ***GET /api/vehicles: View a list of all available vehicles.***
+>- ***GET /api/vehicles/search: Search for vehicles by make, model, category, or price range.***
+>- ***PUT /api/vehicles/:id: Update a vehicle's details.***
+>- ***DELETE /api/vehicles/:id: Delete a vehicle (Admin only).***
+>- ***Each vehicle must have a unique ID, make, model, category, price, and quantity in stock.***
+>
+>Knowing this, derive a plan for the first endpoint ( add a new vehicle). Follow the test-driven-development. There should be 3 types of tests. Units tests, integration tests and end to end tests.
+>
+>
+>### Test Case Prompts (RED)
+>
+> Write all the necessary failing tests first except end to end tests. Make sure these test cases cover important edgse cases. Do not write any implementation logic or create controller, service or repository files. These test cases are meant to fail. Follow strict Test Driven Development. Follow the best indsutry practices and naming conventions.
+
 
 ## Template for Future Entries
 

@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(AuthenticationError.class)
+    public ResponseEntity<String> handleAuthenticationError(AuthenticationError error) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error.getMessage());
+    }
+
     @ExceptionHandler(EmailAlreadyExistsError.class)
     public ResponseEntity<String> handleEmailAlreadyExists(EmailAlreadyExistsError error) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error.getMessage());

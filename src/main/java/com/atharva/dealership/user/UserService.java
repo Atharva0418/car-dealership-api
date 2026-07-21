@@ -1,5 +1,6 @@
 package com.atharva.dealership.user;
 
+import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
@@ -27,21 +28,39 @@ public class UserService {
     }
 
     public User register(RegisterUserRequest request) {
-        validate(request);
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new EmailAlreadyExistsError("Email already exists: " + request.email());
+        validateBasicInput(request);
+        String normalizedEmail = normalizeEmail(request.email());
+        RegisterUserRequest normalizedRequest = new RegisterUserRequest(normalizedEmail, request.password());
+
+        validate(normalizedRequest);
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
+            throw new EmailAlreadyExistsError("Email already exists: " + normalizedEmail);
         }
 
-        return registerUser(request);
+        return registerUser(normalizedRequest);
     }
 
     private void validate(RegisterUserRequest request) {
-        if (request.email() == null || !request.email().matches(EMAIL_PATTERN)) {
+        if (!request.email().matches(EMAIL_PATTERN)) {
             throw new ValidationError("Email must be a valid email address.");
         }
 
-        if (request.password() == null || request.password().length() < MINIMUM_PASSWORD_LENGTH) {
+        if (request.password().length() < MINIMUM_PASSWORD_LENGTH) {
             throw new ValidationError("Password must be at least 8 characters long.");
         }
+    }
+
+    private void validateBasicInput(RegisterUserRequest request) {
+        if (request.email() == null || request.email().isBlank()) {
+            throw new ValidationError("Email must be a valid email address.");
+        }
+
+        if (request.password() == null) {
+            throw new ValidationError("Password must be at least 8 characters long.");
+        }
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

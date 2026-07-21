@@ -1,0 +1,16 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: car-dealership-mysql
+    environment:
+      MYSQL_DATABASE: dealership_db
+      MYSQL_USER: dealership_user
+      MYSQL_PASSWORD: dealership_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - dealership_mysql_data:/var/lib/mysql
+
+volumes:
+  dealership_mysql_data:

@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -34,6 +35,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException error) {
         log.warn("Malformed request body: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request body is missing or malformed.");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException error) {
+        log.warn("Request parameter type mismatch: {}", error.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request parameter is invalid.");
     }
 
     @ExceptionHandler(DataAccessException.class)

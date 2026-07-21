@@ -2,20 +2,20 @@ package com.atharva.dealership.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import com.atharva.dealership.dto.RegisterUserRequest;
-import com.atharva.dealership.exception.ValidationError;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.atharva.dealership.dto.RegisterUserRequest;
+import com.atharva.dealership.exception.ValidationError;
 
 /*
  * Assumed production API for the green step:
@@ -92,7 +92,7 @@ class UserServiceTest {
 
         assertThrows(ValidationError.class, () -> userService.register(request));
 
-        verify(userRepository, times(0)).create(any(User.class));
+        verify(userRepository, times(0)).save(any(User.class));
     }
 
     @Test
@@ -101,6 +101,6 @@ class UserServiceTest {
 
         assertThrows(ValidationError.class, () -> userService.register(request));
 
-        verify(userRepository, times(0)).create(any(User.class));
+        verify(userRepository, times(0)).save(any(User.class));
     }
 }

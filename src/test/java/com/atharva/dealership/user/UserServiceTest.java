@@ -1,12 +1,14 @@
 package com.atharva.dealership.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
+import com.atharva.dealership.exception.ValidationError;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +28,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *
  * Methods:
  * - UserService.registerUser(RegisterUserRequest request)
+ * - UserService.register(RegisterUserRequest request)
  * - UserRepository.save(User user)
+ * - UserRepository.create(User user)
  * - PasswordEncoder.encode(String rawPassword)
  * - RegisterUserRequest.getEmail()
  * - RegisterUserRequest.getPassword()
@@ -80,5 +84,23 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
         assertEquals(encodedPassword, savedUser.getPassword());
         assertEquals(email, result.getEmail());
+    }
+
+    @Test
+    void registerWithInvalidEmailThrowsValidationErrorAndDoesNotCreateUser() {
+        RegisterUserRequest request = new RegisterUserRequest("not-an-email", "StrongPassword123!");
+
+        assertThrows(ValidationError.class, () -> userService.register(request));
+
+        verify(userRepository, times(0)).create(any(User.class));
+    }
+
+    @Test
+    void registerWithShortPasswordThrowsValidationErrorAndDoesNotCreateUser() {
+        RegisterUserRequest request = new RegisterUserRequest("valid.user@example.com", "short");
+
+        assertThrows(ValidationError.class, () -> userService.register(request));
+
+        verify(userRepository, times(0)).create(any(User.class));
     }
 }

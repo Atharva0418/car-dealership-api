@@ -119,4 +119,36 @@ class UserServiceTest {
 
         verify(userRepository, times(0)).save(any(User.class));
     }
+
+    @Test
+    void registerNormalizesEmailBeforeCheckingForExistingUser() {
+        String normalizedEmail = "test@example.com";
+        RegisterUserRequest request = new RegisterUserRequest("Test@Example.com", "StrongPassword123!");
+        User existingUser = new User(normalizedEmail, "$2a$10$existing-password");
+        when(userRepository.findByEmail(normalizedEmail)).thenReturn(Optional.of(existingUser));
+
+        assertThrows(EmailAlreadyExistsError.class, () -> userService.register(request));
+
+        verify(userRepository, times(1)).findByEmail(normalizedEmail);
+        verify(userRepository, times(0)).save(any(User.class));
+    }
+
+    @Test
+    void registerSavesNormalizedEmailWhenEmailDoesNotConflict() {
+        String rawEmail = "  New.User@Example.com  ";
+        String normalizedEmail = "new.user@example.com";
+        String rawPassword = "StrongPassword123!";
+        String encodedPassword = "$2a$10$encoded-password";
+        RegisterUserRequest request = new RegisterUserRequest(rawEmail, rawPassword);
+
+        when(userRepository.findByEmail(normalizedEmail)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.register(request);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(userCaptor.capture());
+        assertEquals(normalizedEmail, userCaptor.getValue().getEmail());
+    }
 }

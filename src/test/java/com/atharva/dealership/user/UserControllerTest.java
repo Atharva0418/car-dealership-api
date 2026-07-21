@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 /*
  * Assumed controller contract for the green step:
  * - UserController(UserService userService)
- * - POST /api/users/register accepts JSON matching RegisterUserRequest
+ * - POST /api/auth/register accepts JSON matching RegisterUserRequest
  * - malformed request shape maps to HTTP 400
  * - UserService.register(RegisterUserRequest) is not called for malformed input
  */
@@ -44,7 +44,7 @@ class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isBadRequest());
@@ -60,7 +60,7 @@ class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isBadRequest());

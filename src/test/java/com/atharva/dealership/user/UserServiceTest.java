@@ -15,7 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
+import com.atharva.dealership.exception.DuplicateEmailError;
 import com.atharva.dealership.exception.ValidationError;
+import java.util.Optional;
 
 /*
  * Assumed production API for the green step:
@@ -31,6 +33,7 @@ import com.atharva.dealership.exception.ValidationError;
  * - UserService.register(RegisterUserRequest request)
  * - UserRepository.save(User user)
  * - UserRepository.create(User user)
+ * - UserRepository.findByEmail(String email)
  * - PasswordEncoder.encode(String rawPassword)
  * - RegisterUserRequest.getEmail()
  * - RegisterUserRequest.getPassword()
@@ -102,5 +105,17 @@ class UserServiceTest {
         assertThrows(ValidationError.class, () -> userService.register(request));
 
         verify(userRepository, times(0)).save(any(User.class));
+    }
+
+    @Test
+    void registerWithExistingEmailThrowsDuplicateEmailErrorAndDoesNotCreateUser() {
+        String email = "existing.user@example.com";
+        RegisterUserRequest request = new RegisterUserRequest(email, "StrongPassword123!");
+        User existingUser = new User(email, "$2a$10$existing-password");
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(existingUser));
+
+        assertThrows(DuplicateEmailError.class, () -> userService.register(request));
+
+        verify(userRepository, times(0)).create(any(User.class));
     }
 }

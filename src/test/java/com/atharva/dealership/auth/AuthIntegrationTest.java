@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AuthIntegrationSmokeTest {
+class AuthIntegrationTest {
 
     @Autowired
     private UserService userService;
@@ -35,10 +35,10 @@ class AuthIntegrationSmokeTest {
 
     @Test
     void registeredUserCanLoginAndRefreshWithStatelessRefreshJwt() {
-        userService.register(new RegisterUserRequest("auth.smoke@example.com", "StrongPassword123!"));
+        userService.register(new RegisterUserRequest("auth.integration@example.com", "StrongPassword123!"));
 
         AuthResponse loginResponse = authService.login(
-                new LoginRequest("auth.smoke@example.com", "StrongPassword123!"));
+                new LoginRequest("auth.integration@example.com", "StrongPassword123!"));
         assertNotNull(loginResponse.accessToken());
         assertNotNull(loginResponse.refreshToken());
         assertFalse(loginResponse.refreshToken().isBlank());

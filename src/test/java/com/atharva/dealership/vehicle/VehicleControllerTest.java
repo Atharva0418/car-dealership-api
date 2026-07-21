@@ -1,6 +1,7 @@
 package com.atharva.dealership.vehicle;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,9 +25,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.server.ResponseStatusException;
 
 /*
  * Red-phase controller contract:
@@ -168,6 +172,91 @@ class VehicleControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(vehicleService, never()).create(any(CreateVehicleRequest.class));
+    }
+
+    @Test
+    void updateVehicleWithValidRequestReturnsUpdatedVehicle() throws Exception {
+        when(vehicleService.update(eq(42L), any(CreateVehicleRequest.class))).thenReturn(new Vehicle(
+                42L,
+                "Honda",
+                "Civic",
+                "Hatchback",
+                new BigDecimal("25500.00"),
+                3));
+
+        mockMvc.perform(put("/api/vehicles/{id}", 42L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "make": "Honda",
+                                  "model": "Civic",
+                                  "category": "Hatchback",
+                                  "price": 25500.00,
+                                  "quantityInStock": 3
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(42))
+                .andExpect(jsonPath("$.make").value("Honda"))
+                .andExpect(jsonPath("$.model").value("Civic"))
+                .andExpect(jsonPath("$.category").value("Hatchback"))
+                .andExpect(jsonPath("$.price").value(25500.00))
+                .andExpect(jsonPath("$.quantityInStock").value(3));
+
+        verify(vehicleService, times(1)).update(eq(42L), any(CreateVehicleRequest.class));
+    }
+
+    @Test
+    void updateVehicleWithMissingRequiredFieldReturnsBadRequestAndDoesNotCallService() throws Exception {
+        mockMvc.perform(put("/api/vehicles/{id}", 42L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "model": "Civic",
+                                  "category": "Hatchback",
+                                  "price": 25500.00,
+                                  "quantityInStock": 3
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(vehicleService, never()).update(any(Long.class), any(CreateVehicleRequest.class));
+    }
+
+    @Test
+    void updateVehicleWithMalformedJsonReturnsBadRequestAndDoesNotCallService() throws Exception {
+        mockMvc.perform(put("/api/vehicles/{id}", 42L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "make": "Honda",
+                                  "model":
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(vehicleService, never()).update(any(Long.class), any(CreateVehicleRequest.class));
+    }
+
+    @Test
+    void updateMissingVehicleReturnsNotFound() throws Exception {
+        when(vehicleService.update(eq(404L), any(CreateVehicleRequest.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found."));
+
+        mockMvc.perform(put("/api/vehicles/{id}", 404L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "make": "Honda",
+                                  "model": "Civic",
+                                  "category": "Hatchback",
+                                  "price": 25500.00,
+                                  "quantityInStock": 3
+                                }
+                                """))
+                .andExpect(status().isNotFound());
+
+        verify(vehicleService, times(1)).update(eq(404L), any(CreateVehicleRequest.class));
     }
 
     @Test

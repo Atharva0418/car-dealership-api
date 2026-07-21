@@ -12,6 +12,7 @@ import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -207,6 +208,109 @@ class VehicleServiceTest {
     }
 
     @Test
+    void updateWithValidVehiclePersistsTrimmedDetailsAndPreservesVehicleId() {
+        long vehicleId = 42L;
+        Vehicle existingVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                5);
+        CreateVehicleRequest request = new CreateVehicleRequest(
+                "  Honda  ",
+                "  Civic  ",
+                "  Hatchback  ",
+                new BigDecimal("25500.00"),
+                3);
+        Vehicle savedVehicle = new Vehicle(
+                vehicleId,
+                "Honda",
+                "Civic",
+                "Hatchback",
+                new BigDecimal("25500.00"),
+                3);
+
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
+        when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
+
+        Vehicle result = vehicleService.update(vehicleId, request);
+
+        ArgumentCaptor<Vehicle> vehicleCaptor = ArgumentCaptor.forClass(Vehicle.class);
+        verify(vehicleRepository, times(1)).findById(vehicleId);
+        verify(vehicleRepository, times(1)).save(vehicleCaptor.capture());
+
+        Vehicle persistedVehicle = vehicleCaptor.getValue();
+        assertEquals(vehicleId, persistedVehicle.getId());
+        assertEquals("Honda", persistedVehicle.getMake());
+        assertEquals("Civic", persistedVehicle.getModel());
+        assertEquals("Hatchback", persistedVehicle.getCategory());
+        assertEquals(new BigDecimal("25500.00"), persistedVehicle.getPrice());
+        assertEquals(3, persistedVehicle.getQuantityInStock());
+        assertEquals(vehicleId, result.getId());
+    }
+
+    @Test
+    void updateWithMissingVehicleDoesNotPersistVehicle() {
+        long missingVehicleId = 404L;
+        when(vehicleRepository.findById(missingVehicleId)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> vehicleService.update(missingVehicleId, validUpdateRequest()));
+
+        verify(vehicleRepository, times(1)).findById(missingVehicleId);
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+    }
+
+    @Test
+    void updateWithBlankRequiredFieldThrowsValidationErrorAndDoesNotPersistVehicle() {
+        long vehicleId = 42L;
+        CreateVehicleRequest request = new CreateVehicleRequest(
+                "Toyota",
+                "   ",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                5);
+
+        assertThrows(ValidationError.class, () -> vehicleService.update(vehicleId, request));
+
+        verify(vehicleRepository, never()).findById(vehicleId);
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+    }
+
+    @Test
+    void updateAllowsZeroQuantityForOutOfStockVehicle() {
+        long vehicleId = 42L;
+        Vehicle existingVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                5);
+        CreateVehicleRequest request = new CreateVehicleRequest(
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                0);
+        Vehicle savedVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                0);
+
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
+        when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
+
+        Vehicle result = vehicleService.update(vehicleId, request);
+
+        verify(vehicleRepository, times(1)).save(any(Vehicle.class));
+        assertEquals(0, result.getQuantityInStock());
+    }
+
+    @Test
     void findAvailableVehiclesReturnsOnlyVehiclesWithPositiveStock() {
         Vehicle availableVehicle = new Vehicle(
                 42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5);
@@ -237,5 +341,14 @@ class VehicleServiceTest {
                 "Sedan",
                 new BigDecimal("28000.00"),
                 5);
+    }
+
+    private CreateVehicleRequest validUpdateRequest() {
+        return new CreateVehicleRequest(
+                "Honda",
+                "Civic",
+                "Hatchback",
+                new BigDecimal("25500.00"),
+                3);
     }
 }

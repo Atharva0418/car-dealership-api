@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootTest
-class UserRegistrationIntegrationSmokeTest {
+class UserRegistrationIntegrationTest {
 
     @Autowired
     private UserService userService;
@@ -31,13 +31,13 @@ class UserRegistrationIntegrationSmokeTest {
     @Test
     void registerPersistsUserAndCanFetchItBackByNormalizedEmail() {
         String rawPassword = "StrongPassword123!";
-        RegisterUserRequest request = new RegisterUserRequest("  Smoke.Test@Example.com  ", rawPassword);
+        RegisterUserRequest request = new RegisterUserRequest("  Integration.Test@Example.com  ", rawPassword);
 
         User registeredUser = userService.register(request);
 
-        User fetchedUser = userRepository.findByEmail("smoke.test@example.com").orElseThrow();
+        User fetchedUser = userRepository.findByEmail("integration.test@example.com").orElseThrow();
         assertEquals(registeredUser.getEmail(), fetchedUser.getEmail());
-        assertEquals("smoke.test@example.com", fetchedUser.getEmail());
+        assertEquals("integration.test@example.com", fetchedUser.getEmail());
         assertNotEquals(rawPassword, fetchedUser.getPassword());
         assertTrue(passwordEncoder.matches(rawPassword, fetchedUser.getPassword()));
     }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestControllerAdvice
@@ -29,6 +30,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleValidationError(ValidationError error) {
         log.warn("Validation error: {}", error.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error.getMessage());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<String> handleResponseStatusException(ResponseStatusException error) {
+        log.warn("Request failed with status {}: {}", error.getStatusCode(), error.getReason());
+        return ResponseEntity.status(error.getStatusCode()).body(error.getReason());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

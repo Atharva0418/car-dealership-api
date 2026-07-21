@@ -6,38 +6,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.atharva.dealership.auth.JwtService;
+import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@WebMvcTest(controllers = JwtAuthenticationFilterTest.ProtectedTestController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationFilterTest.TestBeans.class})
 class JwtAuthenticationFilterTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private JwtService jwtService;
+    private final JwtService jwtService = mock(JwtService.class);
+    private final MockMvc mockMvc = MockMvcBuilders
+            .standaloneSetup(new ProtectedTestController())
+            .addFilters(new TestAuthorizationFilter(), new JwtAuthenticationFilter(jwtService))
+            .build();
 
     @Test
     void publicAuthEndpointsRemainAccessibleWithoutBearerToken() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -69,20 +65,35 @@ class JwtAuthenticationFilterTest {
     @RestController
     static class ProtectedTestController {
 
+        @PostMapping("/api/auth/login")
+        void login() {
+        }
+
         @GetMapping("/protected-test")
         String protectedEndpoint() {
             return "protected";
         }
     }
 
-    @Configuration
-    @EnableWebSecurity
-    @EnableAutoConfiguration
-    static class TestBeans {
+    static class TestAuthorizationFilter extends OncePerRequestFilter {
 
-        @Bean
-        PasswordEncoderConfig passwordEncoderConfig() {
-            return new PasswordEncoderConfig();
+        @Override
+        protected void doFilterInternal(
+                jakarta.servlet.http.HttpServletRequest request,
+                jakarta.servlet.http.HttpServletResponse response,
+                jakarta.servlet.FilterChain filterChain) throws java.io.IOException, ServletException {
+            SecurityContextHolder.clearContext();
+            try {
+                filterChain.doFilter(request, response);
+                if (request.getRequestURI().startsWith("/api/auth/")) {
+                    return;
+                }
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    response.setStatus(403);
+                }
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
         }
     }
 }

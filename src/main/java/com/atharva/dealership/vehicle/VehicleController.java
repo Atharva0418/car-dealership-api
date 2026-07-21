@@ -2,6 +2,7 @@ package com.atharva.dealership.vehicle;
 
 import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -46,5 +48,18 @@ public class VehicleController {
         List<Vehicle> availableVehicles = vehicleService.findAvailableVehicles();
         log.info("Available vehicle listing request completed successfully with {} vehicles", availableVehicles.size());
         return ResponseEntity.ok(availableVehicles);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Vehicle>> searchAvailableVehicles(
+            @RequestParam(required = false) String make,
+            @RequestParam(required = false) String model,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+        log.info("Starting available vehicle search request");
+        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(make, model, category, minPrice, maxPrice);
+        log.info("Available vehicle search request completed successfully with {} vehicles", vehicles.size());
+        return ResponseEntity.ok(vehicles);
     }
 }

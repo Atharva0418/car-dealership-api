@@ -28,7 +28,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
+
+        boolean publicAuthEndpoint = request.getRequestURI().startsWith("/api/auth/");
+
         String authorization = request.getHeader("Authorization");
+        
         if (authorization != null && authorization.startsWith("Bearer ")) {
             String token = authorization.substring(7);
             if (jwtService.isValidAccessToken(token)) {
@@ -39,9 +43,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Authenticated request for subject {} on {}", subject, request.getRequestURI());
             } else {
                 log.debug("Ignoring invalid bearer token on {}", request.getRequestURI());
+                if (!publicAuthEndpoint) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
             }
         } else {
             log.trace("No bearer token found on {}", request.getRequestURI());
+            if (!publicAuthEndpoint) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);

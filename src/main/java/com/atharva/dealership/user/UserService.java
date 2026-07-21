@@ -1,12 +1,14 @@
 package com.atharva.dealership.user;
 
 import java.util.Locale;
+import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.atharva.dealership.dto.RegisterUserRequest;
 import com.atharva.dealership.exception.EmailAlreadyExistsError;
 import com.atharva.dealership.exception.ValidationError;
 
+@Service
 public class UserService {
 
     private static final String EMAIL_PATTERN = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";

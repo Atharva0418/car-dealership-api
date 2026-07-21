@@ -1,13 +1,16 @@
 package com.atharva.dealership.auth;
 
 import com.atharva.dealership.exception.AuthenticationError;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Base64;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,7 +19,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    private final String secret;
+    private static final String ACCESS_TOKEN_TYPE = "access";
+    private static final String REFRESH_TOKEN_TYPE = "refresh";
+    private static final String INVALID_ACCESS_TOKEN_MESSAGE = "Invalid access token.";
+    private static final String INVALID_REFRESH_TOKEN_MESSAGE = "Invalid refresh token.";
+
+    private final Key key;
     private final long accessTokenExpirationSeconds;
     private final long refreshTokenExpirationSeconds;
     private final Clock clock;
@@ -26,36 +34,52 @@ public class JwtService {
             @Value("${jwt.access-token-expiration-seconds}") long accessTokenExpirationSeconds,
             @Value("${jwt.refresh-token-expiration-seconds}") long refreshTokenExpirationSeconds,
             Clock clock) {
-        this.secret = secret;
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpirationSeconds = accessTokenExpirationSeconds;
         this.refreshTokenExpirationSeconds = refreshTokenExpirationSeconds;
         this.clock = clock;
     }
 
     public String generateAccessToken(String subject) {
-        Instant now = clock.instant();
-        Instant expiresAt = now.plusSeconds(accessTokenExpirationSeconds);
-        String header = encode("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
-        String payload = encode("{\"sub\":\"" + subject + "\",\"iat\":" + now.getEpochSecond()
-                + ",\"exp\":" + expiresAt.getEpochSecond() + "}");
-        String unsignedToken = header + "." + payload;
-        log.debug("Generated access token for subject {} expiring at {}", subject, expiresAt);
-        return unsignedToken + "." + sign(unsignedToken);
+        return generateToken(subject, accessTokenExpirationSeconds, ACCESS_TOKEN_TYPE);
+    }
+
+    public String generateRefreshToken(String subject) {
+        return generateToken(subject, refreshTokenExpirationSeconds, REFRESH_TOKEN_TYPE);
     }
 
     public String extractSubject(String token) {
-        Claims claims = parseAndValidate(token);
+        TokenClaims claims = parseAndValidate(token, ACCESS_TOKEN_TYPE);
+        return claims.subject();
+    }
+
+    public String extractRefreshSubject(String token) {
+        TokenClaims claims = parseAndValidate(token, REFRESH_TOKEN_TYPE);
         return claims.subject();
     }
 
     public Instant extractExpiration(String token) {
-        Claims claims = parseAndValidate(token);
-        return Instant.ofEpochSecond(claims.expirationEpochSecond());
+        TokenClaims claims = parseAndValidate(token, ACCESS_TOKEN_TYPE);
+        return claims.expiration();
+    }
+
+    public Instant extractRefreshExpiration(String token) {
+        TokenClaims claims = parseAndValidate(token, REFRESH_TOKEN_TYPE);
+        return claims.expiration();
     }
 
     public boolean isValidAccessToken(String token) {
         try {
-            parseAndValidate(token);
+            parseAndValidate(token, ACCESS_TOKEN_TYPE);
+            return true;
+        } catch (AuthenticationError error) {
+            return false;
+        }
+    }
+
+    public boolean isValidRefreshToken(String token) {
+        try {
+            parseAndValidate(token, REFRESH_TOKEN_TYPE);
             return true;
         } catch (AuthenticationError error) {
             return false;
@@ -70,91 +94,59 @@ public class JwtService {
         return refreshTokenExpirationSeconds;
     }
 
-    private Claims parseAndValidate(String token) {
-        String[] parts = token == null ? new String[0] : token.split("\\.");
-        if (parts.length != 3) {
-            log.debug("Rejected access token: malformed token structure");
-            throw new AuthenticationError("Invalid access token.");
-        }
+    private String generateToken(String subject, long expirationSeconds, String tokenType) {
+        Instant now = clock.instant();
+        Instant expiresAt = now.plusSeconds(expirationSeconds);
+        log.debug("Generated {} token for subject {} expiring at {}", tokenType, subject, expiresAt);
+        return Jwts.builder()
+                .setSubject(subject)
+                .claim("type", tokenType)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiresAt))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
 
-        String unsignedToken = parts[0] + "." + parts[1];
-        if (!constantTimeEquals(sign(unsignedToken), parts[2])) {
-            log.debug("Rejected access token: invalid signature");
-            throw new AuthenticationError("Invalid access token.");
-        }
-
-        String payload;
+    private TokenClaims parseAndValidate(String token, String expectedType) {
         try {
-            payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException error) {
-            log.debug("Rejected access token: payload is not valid Base64URL");
-            throw new AuthenticationError("Invalid access token.");
-        }
-        String subject = extractStringClaim(payload, "sub");
-        long expiration = extractLongClaim(payload, "exp");
-        if (!Instant.ofEpochSecond(expiration).isAfter(clock.instant())) {
-            log.debug("Rejected access token: token expired for subject {}", subject);
-            throw new AuthenticationError("Invalid access token.");
-        }
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .setClock(() -> Date.from(clock.instant()))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            String subject = claims.getSubject();
+            String tokenType = claims.get("type", String.class);
+            Date expiration = claims.getExpiration();
 
-        log.debug("Validated access token for subject {}", subject);
-        return new Claims(subject, expiration);
-    }
+            if (subject == null || subject.isBlank()) {
+                log.debug("Rejected {} token: missing subject", expectedType);
+                throw invalidTokenError(expectedType);
+            }
+            if (!expectedType.equals(tokenType)) {
+                log.debug("Rejected {} token: token type claim was {}", expectedType, tokenType);
+                throw invalidTokenError(expectedType);
+            }
+            if (expiration == null) {
+                log.debug("Rejected {} token: missing expiration", expectedType);
+                throw invalidTokenError(expectedType);
+            }
 
-    private String sign(String value) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString(mac.doFinal(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception error) {
-            throw new IllegalStateException("Unable to sign JWT.", error);
-        }
-    }
-
-    private boolean constantTimeEquals(String expected, String actual) {
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                actual.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String encode(String value) {
-        return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String extractStringClaim(String json, String claimName) {
-        String marker = "\"" + claimName + "\":\"";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            throw new AuthenticationError("Invalid access token.");
-        }
-        int valueStart = start + marker.length();
-        int valueEnd = json.indexOf("\"", valueStart);
-        if (valueEnd < 0) {
-            throw new AuthenticationError("Invalid access token.");
-        }
-        return json.substring(valueStart, valueEnd);
-    }
-
-    private long extractLongClaim(String json, String claimName) {
-        String marker = "\"" + claimName + "\":";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            throw new AuthenticationError("Invalid access token.");
-        }
-        int valueStart = start + marker.length();
-        int valueEnd = json.indexOf(",", valueStart);
-        if (valueEnd < 0) {
-            valueEnd = json.indexOf("}", valueStart);
-        }
-        try {
-            return Long.parseLong(json.substring(valueStart, valueEnd));
-        } catch (RuntimeException error) {
-            throw new AuthenticationError("Invalid access token.");
+            log.debug("Validated {} token for subject {}", expectedType, subject);
+            return new TokenClaims(subject, expiration.toInstant());
+        } catch (JwtException | IllegalArgumentException error) {
+            log.debug("Rejected {} token: {}", expectedType, error.getClass().getSimpleName());
+            throw invalidTokenError(expectedType);
         }
     }
 
-    private record Claims(String subject, long expirationEpochSecond) {
+    private AuthenticationError invalidTokenError(String expectedType) {
+        if (REFRESH_TOKEN_TYPE.equals(expectedType)) {
+            return new AuthenticationError(INVALID_REFRESH_TOKEN_MESSAGE);
+        }
+        return new AuthenticationError(INVALID_ACCESS_TOKEN_MESSAGE);
+    }
+
+    private record TokenClaims(String subject, Instant expiration) {
     }
 }

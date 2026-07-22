@@ -1,26 +1,45 @@
 import { request } from '../../../shared/api/client';
 import type { Vehicle, VehicleInput } from './types';
 
-type VehicleSearchFilters = {
+export type VehicleSearchFilters = {
   make?: string;
   model?: string;
   category?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  minPrice?: number | null;
+  maxPrice?: number | null;
 };
 
-function buildSearchPath(filters: VehicleSearchFilters): string {
+export function buildVehicleSearchParams(filters: VehicleSearchFilters): URLSearchParams {
   const searchParams = new URLSearchParams();
 
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
+  const setTextParam = (key: 'make' | 'model' | 'category', value?: string) => {
+    const nextValue = value?.trim();
+
+    if (nextValue) {
+      searchParams.set(key, nextValue);
+    }
+  };
+
+  const setNumberParam = (key: 'minPrice' | 'maxPrice', value?: number | null) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
       searchParams.set(key, String(value));
     }
-  });
+  };
 
+  setTextParam('make', filters.make);
+  setTextParam('model', filters.model);
+  setTextParam('category', filters.category);
+  setNumberParam('minPrice', filters.minPrice);
+  setNumberParam('maxPrice', filters.maxPrice);
+
+  return searchParams;
+}
+
+function buildSearchPath(filters: VehicleSearchFilters): string {
+  const searchParams = buildVehicleSearchParams(filters);
   const queryString = searchParams.toString();
 
-  return queryString ? `/vehicles?${queryString}` : '/vehicles';
+  return queryString ? `/vehicles/search?${queryString}` : '/vehicles/search';
 }
 
 export function listVehicles(): Promise<Vehicle[]> {

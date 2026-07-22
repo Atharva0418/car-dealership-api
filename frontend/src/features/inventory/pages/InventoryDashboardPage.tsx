@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/api/client';
 import { useAuth } from '../../auth/context/AuthContext';
 import {
   createVehicle,
+  deleteVehicle,
   listVehicles,
   purchaseVehicle,
   searchVehicles,
@@ -304,8 +305,10 @@ function VehicleAddForm({ onCreated }: VehicleAddFormProps) {
 }
 
 type VehicleCardProps = {
+  canDelete: boolean;
   canEdit: boolean;
   canPurchase: boolean;
+  onDelete: (vehicle: Vehicle) => Promise<void>;
   onEdit: (vehicle: Vehicle) => void;
   onPurchase: (id: string) => Promise<void>;
   vehicle: Vehicle;
@@ -476,9 +479,36 @@ function VehicleEditForm({ onCancel, onUpdated, vehicle }: VehicleEditFormProps)
   );
 }
 
-function VehicleCard({ canEdit, canPurchase, onEdit, onPurchase, vehicle }: VehicleCardProps) {
+function VehicleCard({
+  canDelete,
+  canEdit,
+  canPurchase,
+  onDelete,
+  onEdit,
+  onPurchase,
+  vehicle,
+}: VehicleCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const isOutOfStock = vehicle.quantityInStock === 0;
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      `Delete ${vehicle.make} ${vehicle.model} from inventory?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await onDelete(vehicle);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
@@ -524,25 +554,37 @@ function VehicleCard({ canEdit, canPurchase, onEdit, onPurchase, vehicle }: Vehi
               {currencyFormatter.format(vehicle.price)}
             </p>
           </div>
-          {canPurchase ? (
-            <button
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
-              disabled={isOutOfStock || isPurchasing}
-              onClick={() => void handlePurchase()}
-              type="button"
-            >
-              Purchase
-            </button>
-          ) : null}
-          {canEdit ? (
-            <button
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-800 shadow-sm transition hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-              onClick={() => onEdit(vehicle)}
-              type="button"
-            >
-              Edit
-            </button>
-          ) : null}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {canPurchase ? (
+              <button
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
+                disabled={isOutOfStock || isPurchasing}
+                onClick={() => void handlePurchase()}
+                type="button"
+              >
+                Purchase
+              </button>
+            ) : null}
+            {canEdit ? (
+              <button
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-cyan-200 bg-white px-4 py-2 text-sm font-bold text-cyan-800 shadow-sm transition hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                onClick={() => onEdit(vehicle)}
+                type="button"
+              >
+                Edit
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isDeleting}
+                onClick={() => void handleDelete()}
+                type="button"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
     </article>
@@ -554,12 +596,14 @@ export function InventoryDashboardPage() {
   const [status, setStatus] = useState<InventoryStatus>('loading');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState('');
   const [isFiltered, setIsFiltered] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
 
   const fetchVehicles = useCallback(async () => {
     setStatus('loading');
     setErrorMessage('');
+    setDeleteErrorMessage('');
 
     try {
       const nextVehicles = await listVehicles();
@@ -577,6 +621,7 @@ export function InventoryDashboardPage() {
   const handleSearch = useCallback(async (filters: VehicleSearchFilters) => {
     setStatus('loading');
     setErrorMessage('');
+    setDeleteErrorMessage('');
 
     try {
       const nextVehicles = await searchVehicles(filters);
@@ -599,6 +644,19 @@ export function InventoryDashboardPage() {
         vehicle.id === purchasedVehicle.id ? purchasedVehicle : vehicle,
       ),
     );
+  }, []);
+
+  const handleDelete = useCallback(async (vehicle: Vehicle) => {
+    setDeleteErrorMessage('');
+
+    try {
+      await deleteVehicle(vehicle.id);
+      setVehicles((currentVehicles) =>
+        currentVehicles.filter((currentVehicle) => currentVehicle.id !== vehicle.id),
+      );
+    } catch (error) {
+      setDeleteErrorMessage(getErrorMessage(error));
+    }
   }, []);
 
   const handleVehicleUpdated = useCallback(async () => {
@@ -634,6 +692,15 @@ export function InventoryDashboardPage() {
       />
 
       {isAdmin ? <VehicleAddForm onCreated={fetchVehicles} /> : null}
+
+      {deleteErrorMessage ? (
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm"
+          role="alert"
+        >
+          {deleteErrorMessage}
+        </div>
+      ) : null}
 
       {status === 'loading' ? (
         <div aria-label="Loading inventory" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -691,9 +758,11 @@ export function InventoryDashboardPage() {
               />
             ) : (
               <VehicleCard
+                canDelete={isAdmin}
                 canEdit={isAdmin}
                 canPurchase={!isAdmin}
                 key={vehicle.id}
+                onDelete={handleDelete}
                 onEdit={(nextVehicle) => setEditingVehicleId(nextVehicle.id)}
                 onPurchase={handlePurchase}
                 vehicle={vehicle}

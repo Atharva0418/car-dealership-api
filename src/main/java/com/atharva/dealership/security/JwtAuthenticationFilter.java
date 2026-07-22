@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         log.debug("Starting JWT authentication filter for {} {}", request.getMethod(), request.getRequestURI());
-        boolean publicAuthEndpoint = request.getRequestURI().startsWith("/api/auth/");
+        boolean publicEndpoint = isPublicEndpoint(request);
 
         String authorization = request.getHeader("Authorization");
         
@@ -45,14 +45,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Authenticated request for subject {} on {}", subject, request.getRequestURI());
             } else {
                 log.debug("Ignoring invalid bearer token on {}", request.getRequestURI());
-                if (!publicAuthEndpoint) {
+                if (!publicEndpoint) {
                     response.setStatus(statusForRejectedAuthentication(request));
                     return;
                 }
             }
         } else {
             log.trace("No bearer token found on {}", request.getRequestURI());
-            if (!publicAuthEndpoint) {
+            if (!publicEndpoint) {
                 response.setStatus(statusForRejectedAuthentication(request));
                 return;
             }
@@ -71,6 +71,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isAdminSubject(String subject) {
         return subject != null && subject.split("@", 2)[0].contains("admin");
+    }
+
+    private boolean isPublicEndpoint(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/auth/")
+                || ("HEAD".equals(request.getMethod()) && "/api/health".equals(request.getRequestURI()));
     }
 
     private int statusForRejectedAuthentication(HttpServletRequest request) {

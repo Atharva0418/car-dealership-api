@@ -30,7 +30,9 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers("/api/auth/**")
-                    .permitAll()  
+                    .permitAll()
+                    .requestMatchers(HttpMethod.HEAD, "/api/health")
+                    .permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/api/vehicles/*")
                     .hasRole("ADMIN")
                     .anyRequest()

@@ -1,0 +1,11 @@
+.git
+.gradle
+build
+frontend
+.vscode
+.agents
+.codex
+.env
+*.md
+Dockerfile
+docker-compose.yml

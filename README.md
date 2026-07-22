@@ -15,12 +15,21 @@ Email: admin@dealership.com
 Password: admin123
 ```
 
-### Architecutre
+### Architecture
 
-[Architecture](docs/images/architecture.png)
+![Architecture diagram](docs/images/architecture.png)
+
+### Screenshots
+
+![Screenshot 1](docs/images/ss1.png)
+
+![Screenshot 2](docs/images/ss2.png)
+
+![Screenshot 3](docs/images/ss3.png)
+
+![Screenshot 4](docs/images/ss4.png)
 
 ## Tech Stack
-
 
 
 ### Backend
@@ -264,4 +273,3 @@ I also used Claude for brain storming , approaches , planning and prompts for Co
 git commit -m "docs: add my ai usage in readme.md
 Co-authored by Me."
 ```
-

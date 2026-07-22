@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '../../../app/App';
 import { AuthProvider } from '../../auth/context/AuthContext';
@@ -75,6 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   resetRequestSnapshots();
   server.resetHandlers();
 });
@@ -143,6 +144,112 @@ describe('inventory dashboard', () => {
 
     expect(await screen.findByText('Toyota')).not.toBeNull();
     expect(screen.queryAllByRole('button', { name: /purchase/i })).toHaveLength(0);
+  });
+
+  it('does not show Delete buttons for non-admin users', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp('CUSTOMER');
+
+    expect(await screen.findByText('Toyota')).not.toBeNull();
+    expect(screen.queryAllByRole('button', { name: /delete/i })).toHaveLength(0);
+  });
+
+  it('requires admin confirmation before deleting a vehicle', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    let deleteRequestCount = 0;
+
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.delete('http://localhost/api/vehicles/:id', () => {
+        deleteRequestCount += 1;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    const vehicleCard = await findVehicleCard('Toyota');
+    fireEvent.click(within(vehicleCard).getByRole('button', { name: /delete/i }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(deleteRequestCount).toBe(0);
+    expect(screen.getByText('Toyota')).not.toBeNull();
+  });
+
+  it('calls DELETE /api/vehicles/:id after admin confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    let deleteRequestAuthorization: string | null | undefined;
+    let deleteRequestMethod: string | undefined;
+    let deleteRequestUrl: string | undefined;
+
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.delete('http://localhost/api/vehicles/:id', ({ request }) => {
+        deleteRequestAuthorization = request.headers.get('authorization');
+        deleteRequestMethod = request.method;
+        deleteRequestUrl = request.url;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    const vehicleCard = await findVehicleCard('Toyota');
+    fireEvent.click(within(vehicleCard).getByRole('button', { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(deleteRequestUrl).toBeDefined();
+    });
+
+    expect(deleteRequestMethod).toBe('DELETE');
+    expect(new URL(deleteRequestUrl as string).pathname).toBe('/api/vehicles/vehicle-1');
+    expect(deleteRequestAuthorization).toBe('Bearer access-token');
+  });
+
+  it('removes a successfully deleted vehicle from the admin dashboard', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.delete('http://localhost/api/vehicles/:id', () =>
+        new HttpResponse(null, { status: 204 }),
+      ),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    const vehicleCard = await findVehicleCard('Toyota');
+    fireEvent.click(within(vehicleCard).getByRole('button', { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Toyota')).toBeNull();
+    });
+    expect(screen.getByText('Ford')).not.toBeNull();
+  });
+
+  it('shows an error and keeps the vehicle visible when admin delete fails', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.delete('http://localhost/api/vehicles/:id', () =>
+        HttpResponse.json({ message: 'Vehicle could not be deleted' }, { status: 500 }),
+      ),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    const vehicleCard = await findVehicleCard('Toyota');
+    fireEvent.click(within(vehicleCard).getByRole('button', { name: /delete/i }));
+
+    expect(await screen.findByRole('alert')).not.toBeNull();
+    expect(screen.getByText(/vehicle could not be deleted/i)).not.toBeNull();
+    expect(screen.getByText('Toyota')).not.toBeNull();
   });
 
   it('purchases an in-stock vehicle and renders the decremented stock returned by the API', async () => {

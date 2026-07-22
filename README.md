@@ -17,7 +17,6 @@ Password: admin123
 
 ### Architecture
 
-<<<<<<< HEAD
 ![Architecture diagram](docs/images/architecture.png)
 
 ### Screenshots
@@ -29,9 +28,6 @@ Password: admin123
 ![Screenshot 3](docs/images/ss3.png)
 
 ![Screenshot 4](docs/images/ss4.png)
-=======
-![Architecture](docs/images/architecture.png)
->>>>>>> 117ef2445647a7adf9d047940b46971b6661ca7a
 
 ## Tech Stack
 

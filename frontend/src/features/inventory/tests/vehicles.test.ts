@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { http, HttpResponse } from 'msw';
 
 import { setToken } from '../../auth/api/tokenStore';
 import {
@@ -39,6 +40,16 @@ describe('vehicles API', () => {
   });
 
   it('searchVehicles builds correct query string from provided filters', async () => {
+    let searchRequestUrl: string | undefined;
+
+    server.use(
+      http.get('http://localhost/api/vehicles/search', ({ request }) => {
+        searchRequestUrl = request.url;
+
+        return HttpResponse.json([]);
+      }),
+    );
+
     await searchVehicles({
       make: 'Toyota',
       model: 'Camry',
@@ -47,9 +58,10 @@ describe('vehicles API', () => {
       maxPrice: 35000,
     });
 
-    const url = new URL(getLastRequest().url);
+    expect(searchRequestUrl).toBeDefined();
+    const url = new URL(searchRequestUrl as string);
 
-    expect(url.pathname).toBe('/api/vehicles');
+    expect(url.pathname).toBe('/api/vehicles/search');
     expect(url.searchParams.get('make')).toBe('Toyota');
     expect(url.searchParams.get('model')).toBe('Camry');
     expect(url.searchParams.get('category')).toBe('sedan');
@@ -58,6 +70,16 @@ describe('vehicles API', () => {
   });
 
   it('searchVehicles omits query params for filters that are undefined or empty', async () => {
+    let searchRequestUrl: string | undefined;
+
+    server.use(
+      http.get('http://localhost/api/vehicles/search', ({ request }) => {
+        searchRequestUrl = request.url;
+
+        return HttpResponse.json([]);
+      }),
+    );
+
     await searchVehicles({
       make: '',
       model: undefined,
@@ -66,8 +88,10 @@ describe('vehicles API', () => {
       maxPrice: 45000,
     });
 
-    const url = new URL(getLastRequest().url);
+    expect(searchRequestUrl).toBeDefined();
+    const url = new URL(searchRequestUrl as string);
 
+    expect(url.pathname).toBe('/api/vehicles/search');
     expect(url.searchParams.has('make')).toBe(false);
     expect(url.searchParams.has('model')).toBe(false);
     expect(url.searchParams.get('category')).toBe('suv');

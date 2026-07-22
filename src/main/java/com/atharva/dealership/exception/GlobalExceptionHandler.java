@@ -57,6 +57,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request parameter is invalid.");
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException error) {
+        log.warn("Illegal argument: {}", error.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Request is invalid.");
+    }
+
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessError(DataAccessException error) {
         log.error("Vehicle data access error", error);

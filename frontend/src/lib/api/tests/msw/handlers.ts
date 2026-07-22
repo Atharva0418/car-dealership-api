@@ -75,4 +75,47 @@ export const handlers = [
       refreshToken: 'new-refresh-token',
     });
   }),
+  http.get('http://localhost/api/vehicles', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json([
+      {
+        id: 'vehicle-1',
+        make: 'Toyota',
+        model: 'Camry',
+        year: 2024,
+        price: 28000,
+        category: 'sedan',
+      },
+    ]);
+  }),
+  http.post('http://localhost/api/vehicles', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json({
+      id: 'vehicle-1',
+      make: 'Toyota',
+      model: 'Camry',
+      year: 2024,
+      price: 28000,
+      category: 'sedan',
+    });
+  }),
+  http.put('http://localhost/api/vehicles/:id', async ({ request, params }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json({
+      id: params.id,
+      make: 'Toyota',
+      model: 'Camry',
+      year: 2024,
+      price: 29000,
+      category: 'sedan',
+    });
+  }),
+  http.delete('http://localhost/api/vehicles/:id', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];

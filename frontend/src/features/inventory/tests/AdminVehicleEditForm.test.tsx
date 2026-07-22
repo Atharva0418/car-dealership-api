@@ -119,11 +119,11 @@ describe('admin vehicle edit form', () => {
 
     const form = await openEditForm('Toyota');
 
-    expect(within(form).getByLabelText(/^make$/i)).toHaveValue('Toyota');
-    expect(within(form).getByLabelText(/^model$/i)).toHaveValue('Camry');
-    expect(within(form).getByLabelText(/^category$/i)).toHaveValue('Sedan');
-    expect(within(form).getByLabelText(/^price$/i)).toHaveValue(28000);
-    expect(within(form).getByLabelText(/^quantity in stock$/i)).toHaveValue(4);
+    expect((within(form).getByLabelText(/^make$/i) as HTMLInputElement).value).toBe('Toyota');
+    expect((within(form).getByLabelText(/^model$/i) as HTMLInputElement).value).toBe('Camry');
+    expect((within(form).getByLabelText(/^category$/i) as HTMLSelectElement).value).toBe('Sedan');
+    expect((within(form).getByLabelText(/^price$/i) as HTMLInputElement).value).toBe('28000');
+    expect((within(form).getByLabelText(/^quantity in stock$/i) as HTMLInputElement).value).toBe('4');
   });
 
   it('submits the edit form to PUT /api/vehicles/:id with the correct payload', async () => {

@@ -166,7 +166,7 @@ class VehicleCreationEndToEndTest {
     }
 
     @Test
-    void updateVehicleToZeroStockRemovesVehicleFromAvailableListing() throws Exception {
+    void updateVehicleToZeroStockKeepsVehicleInListing() throws Exception {
         Vehicle existingVehicle = vehicleRepository.save(new Vehicle(
                 "Toyota",
                 "Camry",
@@ -184,7 +184,10 @@ class VehicleCreationEndToEndTest {
         mockMvc.perform(get("/api/vehicles")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").doesNotExist());
+                .andExpect(jsonPath("$[0].id").value(existingVehicle.getId()))
+                .andExpect(jsonPath("$[0].make").value("Toyota"))
+                .andExpect(jsonPath("$[0].model").value("Camry"))
+                .andExpect(jsonPath("$[0].quantityInStock").value(0));
     }
 
     private String validVehicleJson() {

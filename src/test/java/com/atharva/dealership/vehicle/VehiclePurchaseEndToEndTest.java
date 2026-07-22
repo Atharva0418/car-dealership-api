@@ -83,7 +83,8 @@ class VehiclePurchaseEndToEndTest {
         mockMvc.perform(get("/api/vehicles")
                         .header(HttpHeaders.AUTHORIZATION, bearer(customerToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").doesNotExist());
+                .andExpect(jsonPath("$[0].id").value(existingVehicle.getId()))
+                .andExpect(jsonPath("$[0].quantityInStock").value(0));
     }
 
     @Test

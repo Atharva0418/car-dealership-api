@@ -25,22 +25,24 @@ class VehicleListingIntegrationTest {
     }
 
     @Test
-    void findAvailableVehiclesReturnsPersistedVehiclesWithPositiveStockOnly() {
+    void findVehiclesReturnsPersistedVehiclesWithAnyStockQuantity() {
         vehicleRepository.saveAll(List.of(
                 new Vehicle("Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5),
                 new Vehicle("Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 0)));
 
-        List<Vehicle> availableVehicles = vehicleService.findAvailableVehicles();
+        List<Vehicle> vehicles = vehicleService.findVehicles();
 
-        assertEquals(1, availableVehicles.size());
-        assertEquals("Toyota", availableVehicles.getFirst().getMake());
-        assertEquals(5, availableVehicles.getFirst().getQuantityInStock());
+        assertEquals(2, vehicles.size());
+        assertEquals("Toyota", vehicles.getFirst().getMake());
+        assertEquals(5, vehicles.getFirst().getQuantityInStock());
+        assertEquals("Honda", vehicles.get(1).getMake());
+        assertEquals(0, vehicles.get(1).getQuantityInStock());
     }
 
     @Test
-    void findAvailableVehiclesWhenDatabaseIsEmptyReturnsEmptyList() {
-        List<Vehicle> availableVehicles = vehicleService.findAvailableVehicles();
+    void findVehiclesWhenDatabaseIsEmptyReturnsEmptyList() {
+        List<Vehicle> vehicles = vehicleService.findVehicles();
 
-        assertTrue(availableVehicles.isEmpty());
+        assertTrue(vehicles.isEmpty());
     }
 }

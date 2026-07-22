@@ -17,10 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /*
  * Red-phase search contract:
- * - VehicleService#searchAvailableVehicles(String make, String model, String category,
+ * - VehicleService#searchVehicles(String make, String model, String category,
  *   BigDecimal minPrice, BigDecimal maxPrice)
  * - Search is case-insensitive and trims text filters
- * - Search returns only vehicles with positive stock
+ * - Search returns matching vehicles with any stock quantity
  * - minPrice and maxPrice are inclusive
  * - Invalid price ranges throw ValidationError
  */
@@ -34,7 +34,7 @@ class VehicleSearchServiceTest {
     private VehicleService vehicleService;
 
     @Test
-    void searchAvailableVehiclesWithTrimmedCaseInsensitiveFiltersReturnsMatchingVehiclesOnly() {
+    void searchVehiclesWithTrimmedCaseInsensitiveFiltersReturnsMatchingVehiclesOnly() {
         Vehicle matchingVehicle = new Vehicle(
                 42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 3);
         Vehicle differentMake = new Vehicle(
@@ -43,19 +43,19 @@ class VehicleSearchServiceTest {
                 44L, "TOYOTA", "Camry", "Sedan", new BigDecimal("27000.00"), 0);
         when(vehicleRepository.findAll()).thenReturn(List.of(matchingVehicle, differentMake, outOfStockMatch));
 
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(
+        List<Vehicle> vehicles = vehicleService.searchVehicles(
                 "  toyota  ",
                 "CAMRY",
                 " sedan ",
-                new BigDecimal("28000.00"),
+                new BigDecimal("27000.00"),
                 new BigDecimal("28000.00"));
 
-        assertEquals(List.of(matchingVehicle), vehicles);
+        assertEquals(List.of(matchingVehicle, outOfStockMatch), vehicles);
         verify(vehicleRepository, times(1)).findAll();
     }
 
     @Test
-    void searchAvailableVehiclesWithInclusivePriceRangeReturnsVehiclesAtBothBoundaries() {
+    void searchVehiclesWithInclusivePriceRangeReturnsVehiclesAtBothBoundaries() {
         Vehicle minimumPriceVehicle = new Vehicle(
                 42L, "Toyota", "Corolla", "Sedan", new BigDecimal("20000.00"), 2);
         Vehicle maximumPriceVehicle = new Vehicle(
@@ -70,7 +70,7 @@ class VehicleSearchServiceTest {
                 belowRangeVehicle,
                 aboveRangeVehicle));
 
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(
+        List<Vehicle> vehicles = vehicleService.searchVehicles(
                 null,
                 null,
                 null,
@@ -82,8 +82,8 @@ class VehicleSearchServiceTest {
     }
 
     @Test
-    void searchAvailableVehiclesWithMinimumPriceGreaterThanMaximumPriceThrowsValidationError() {
-        assertThrows(ValidationError.class, () -> vehicleService.searchAvailableVehicles(
+    void searchVehiclesWithMinimumPriceGreaterThanMaximumPriceThrowsValidationError() {
+        assertThrows(ValidationError.class, () -> vehicleService.searchVehicles(
                 null,
                 null,
                 null,
@@ -92,8 +92,8 @@ class VehicleSearchServiceTest {
     }
 
     @Test
-    void searchAvailableVehiclesWithNegativePriceFilterThrowsValidationError() {
-        assertThrows(ValidationError.class, () -> vehicleService.searchAvailableVehicles(
+    void searchVehiclesWithNegativePriceFilterThrowsValidationError() {
+        assertThrows(ValidationError.class, () -> vehicleService.searchVehicles(
                 null,
                 null,
                 null,

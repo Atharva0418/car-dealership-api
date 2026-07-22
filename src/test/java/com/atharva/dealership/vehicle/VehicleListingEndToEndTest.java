@@ -39,7 +39,7 @@ class VehicleListingEndToEndTest {
     }
 
     @Test
-    void getVehiclesReturnsOnlyAvailableVehiclesForAuthenticatedUser() throws Exception {
+    void getVehiclesReturnsInStockAndOutOfStockVehiclesForAuthenticatedUser() throws Exception {
         vehicleRepository.save(new Vehicle(
                 "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5));
         vehicleRepository.save(new Vehicle(
@@ -51,7 +51,8 @@ class VehicleListingEndToEndTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].make").value("Toyota"))
                 .andExpect(jsonPath("$[0].quantityInStock").value(5))
-                .andExpect(jsonPath("$[1]").doesNotExist());
+                .andExpect(jsonPath("$[1].make").value("Honda"))
+                .andExpect(jsonPath("$[1].quantityInStock").value(0));
     }
 
     @Test

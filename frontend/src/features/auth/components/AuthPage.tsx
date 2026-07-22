@@ -1,8 +1,9 @@
-import { FormEvent, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 
-import { login as loginApi, register as registerApi } from '../lib/api/auth';
-import { ApiError } from '../lib/api/client';
-import { useAuth } from '../auth/AuthContext';
+import { ApiError } from '../../../shared/api/client';
+import { login as loginApi, register as registerApi } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 
 type AuthMode = 'login' | 'register';
 

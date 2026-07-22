@@ -4,10 +4,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { http, HttpResponse } from 'msw';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import App from '../App.jsx';
-import { AuthProvider } from '../auth/AuthContext';
-import { getLastRequest, resetRequestSnapshots } from '../lib/api/tests/msw/handlers';
-import { server } from '../lib/api/tests/msw/server';
+import App from '../../../app/App';
+import { AuthProvider } from '../context/AuthContext';
+import { getLastRequest, resetRequestSnapshots } from '../../../shared/api/tests/msw/handlers';
+import { server } from '../../../shared/api/tests/msw/server';
 
 function renderApp() {
   return render(

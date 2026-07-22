@@ -1,4 +1,4 @@
-import { getToken } from './tokenStore';
+import { getToken } from '../../features/auth/api/tokenStore';
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';

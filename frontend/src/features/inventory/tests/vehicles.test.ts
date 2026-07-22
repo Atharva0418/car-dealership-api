@@ -1,15 +1,15 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { setToken } from '../tokenStore';
+import { setToken } from '../../auth/api/tokenStore';
 import {
   createVehicle,
   deleteVehicle,
   listVehicles,
   searchVehicles,
   updateVehicle,
-} from '../vehicles';
-import { getLastRequest, resetRequestSnapshots } from './msw/handlers';
-import { server } from './msw/server';
+} from '../api/vehicles';
+import { getLastRequest, resetRequestSnapshots } from '../../../shared/api/tests/msw/handlers';
+import { server } from '../../../shared/api/tests/msw/server';
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });

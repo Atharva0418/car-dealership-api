@@ -1,8 +1,3 @@
-export type AuthResponse = {
-  token: string;
-  refreshToken: string;
-};
-
 export type Vehicle = {
   id: string;
   make: string;

@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { login, refresh, register } from '../auth';
-import { getLastRequest, resetRequestSnapshots } from './msw/handlers';
-import { server } from './msw/server';
+import { getLastRequest, resetRequestSnapshots } from '../../../shared/api/tests/msw/handlers';
+import { server } from '../../../shared/api/tests/msw/server';
+import { login, refresh, register } from '../api/auth';
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });

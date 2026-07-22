@@ -1,4 +1,4 @@
-import { StatusCard } from '../components/status/StatusCard.jsx';
+import { StatusCard } from '../components/StatusCard';
 
 const statusCards = [
   {

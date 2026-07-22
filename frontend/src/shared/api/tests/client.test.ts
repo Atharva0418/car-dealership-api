@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { setToken } from '../tokenStore';
+import { setToken } from '../../../features/auth/api/tokenStore';
 import { ApiError, request } from '../client';
 import { getLastRequest, resetRequestSnapshots } from './msw/handlers';
 import { server } from './msw/server';

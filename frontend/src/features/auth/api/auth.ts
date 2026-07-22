@@ -1,5 +1,4 @@
-import { request } from './client';
-import type { AuthResponse } from './types';
+import { request } from '../../../shared/api/client';
 
 type AuthCredentials = {
   email: string;
@@ -7,6 +6,11 @@ type AuthCredentials = {
 };
 
 type RefreshPayload = {
+  refreshToken: string;
+};
+
+type AuthResponse = {
+  token: string;
   refreshToken: string;
 };
 

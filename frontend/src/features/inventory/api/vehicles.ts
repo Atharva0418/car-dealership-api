@@ -1,4 +1,4 @@
-import { request } from './client';
+import { request } from '../../../shared/api/client';
 import type { Vehicle, VehicleInput } from './types';
 
 type VehicleSearchFilters = {

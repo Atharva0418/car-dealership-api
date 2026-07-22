@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getToken, setToken } from '../tokenStore';
+import { getToken, setToken } from '../api/tokenStore';
 
 describe('tokenStore', () => {
   it('returns null before any token is set', () => {

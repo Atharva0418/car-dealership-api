@@ -95,13 +95,13 @@ describe('inventory dashboard', () => {
     expect(await screen.findByText('Toyota')).not.toBeNull();
     expect(screen.getByText('Camry')).not.toBeNull();
     expect(screen.getByText('Sedan')).not.toBeNull();
-    expect(screen.getByText(/\$28,000/)).not.toBeNull();
+    expect(screen.getByText(/₹28,000/)).not.toBeNull();
     expect(screen.getByText(/4\s+in stock/i)).not.toBeNull();
 
     expect(screen.getByText('Ford')).not.toBeNull();
     expect(screen.getByText('Bronco')).not.toBeNull();
     expect(screen.getByText('SUV')).not.toBeNull();
-    expect(screen.getByText(/\$41,500/)).not.toBeNull();
+    expect(screen.getByText(/₹41,500/)).not.toBeNull();
     expect(screen.getByText(/0\s+in stock/i)).not.toBeNull();
   });
 

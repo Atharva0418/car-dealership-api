@@ -192,7 +192,7 @@ describe('admin vehicle edit form', () => {
     });
     expect(updateRequestCount).toBe(0);
     expect(screen.getByText('Toyota')).not.toBeNull();
-    expect(screen.getByText(/\$28,000/)).not.toBeNull();
+    expect(screen.getByText(/₹28,000/)).not.toBeNull();
   });
 
   it('refreshes the vehicle list after a vehicle is updated successfully', async () => {
@@ -217,7 +217,7 @@ describe('admin vehicle edit form', () => {
 
     expect(await screen.findByText('Honda')).not.toBeNull();
     expect(screen.getByText('Accord')).not.toBeNull();
-    expect(screen.getByText(/\$31,500/)).not.toBeNull();
+    expect(screen.getByText(/₹31,500/)).not.toBeNull();
     expect(screen.getByText(/6\s+in stock/i)).not.toBeNull();
     expect(screen.queryByText('Toyota')).toBeNull();
 

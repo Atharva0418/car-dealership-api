@@ -75,16 +75,20 @@ public class AuthService {
     }
 
     private AuthResponse issueTokens(User user) {
+        log.info("Starting token issuance");
         log.debug("Issuing auth tokens for email {}", user.getEmail());
-        String accessToken = jwtService.generateAccessToken(user.getEmail());
+        String role = user.getRole().name();
+        String accessToken = jwtService.generateAccessToken(user.getEmail(), role);
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
         log.debug("Issued stateless refresh token for email {}", user.getEmail());
+        log.info("Token issuance completed successfully for email {}", user.getEmail());
 
         return new AuthResponse(
                 accessToken,
                 refreshToken,
                 "Bearer",
-                jwtService.getAccessTokenExpirationSeconds());
+                jwtService.getAccessTokenExpirationSeconds(),
+                role);
     }
 
     private String normalizeEmail(String email) {

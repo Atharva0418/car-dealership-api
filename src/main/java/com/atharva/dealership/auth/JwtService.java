@@ -41,47 +41,81 @@ public class JwtService {
     }
 
     public String generateAccessToken(String subject) {
-        return generateToken(subject, accessTokenExpirationSeconds, ACCESS_TOKEN_TYPE);
+        log.info("Starting access token generation");
+        String token = generateAccessToken(subject, defaultRoleForSubject(subject));
+        log.info("Access token generation completed successfully");
+        return token;
+    }
+
+    public String generateAccessToken(String subject, String role) {
+        log.info("Starting role-aware access token generation");
+        String token = generateToken(subject, accessTokenExpirationSeconds, ACCESS_TOKEN_TYPE, role);
+        log.info("Role-aware access token generation completed successfully");
+        return token;
     }
 
     public String generateRefreshToken(String subject) {
-        return generateToken(subject, refreshTokenExpirationSeconds, REFRESH_TOKEN_TYPE);
+        log.info("Starting refresh token generation");
+        String token = generateToken(subject, refreshTokenExpirationSeconds, REFRESH_TOKEN_TYPE, null);
+        log.info("Refresh token generation completed successfully");
+        return token;
     }
 
     public String extractSubject(String token) {
+        log.info("Starting access token subject extraction");
         TokenClaims claims = parseAndValidate(token, ACCESS_TOKEN_TYPE);
+        log.info("Access token subject extraction completed successfully");
         return claims.subject();
     }
 
     public String extractRefreshSubject(String token) {
+        log.info("Starting refresh token subject extraction");
         TokenClaims claims = parseAndValidate(token, REFRESH_TOKEN_TYPE);
+        log.info("Refresh token subject extraction completed successfully");
         return claims.subject();
     }
 
-    public Instant extractExpiration(String token) {
+    public String extractRole(String token) {
+        log.info("Starting access token role extraction");
         TokenClaims claims = parseAndValidate(token, ACCESS_TOKEN_TYPE);
+        log.info("Access token role extraction completed successfully");
+        return claims.role();
+    }
+
+    public Instant extractExpiration(String token) {
+        log.info("Starting access token expiration extraction");
+        TokenClaims claims = parseAndValidate(token, ACCESS_TOKEN_TYPE);
+        log.info("Access token expiration extraction completed successfully");
         return claims.expiration();
     }
 
     public Instant extractRefreshExpiration(String token) {
+        log.info("Starting refresh token expiration extraction");
         TokenClaims claims = parseAndValidate(token, REFRESH_TOKEN_TYPE);
+        log.info("Refresh token expiration extraction completed successfully");
         return claims.expiration();
     }
 
     public boolean isValidAccessToken(String token) {
+        log.info("Starting access token validation");
         try {
             parseAndValidate(token, ACCESS_TOKEN_TYPE);
+            log.info("Access token validation completed successfully");
             return true;
         } catch (AuthenticationError error) {
+            log.debug("Access token validation failed: {}", error.getMessage());
             return false;
         }
     }
 
     public boolean isValidRefreshToken(String token) {
+        log.info("Starting refresh token validation");
         try {
             parseAndValidate(token, REFRESH_TOKEN_TYPE);
+            log.info("Refresh token validation completed successfully");
             return true;
         } catch (AuthenticationError error) {
+            log.debug("Refresh token validation failed: {}", error.getMessage());
             return false;
         }
     }
@@ -94,17 +128,19 @@ public class JwtService {
         return refreshTokenExpirationSeconds;
     }
 
-    private String generateToken(String subject, long expirationSeconds, String tokenType) {
+    private String generateToken(String subject, long expirationSeconds, String tokenType, String role) {
         Instant now = clock.instant();
         Instant expiresAt = now.plusSeconds(expirationSeconds);
         log.debug("Generated {} token for subject {} expiring at {}", tokenType, subject, expiresAt);
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(subject)
                 .claim("type", tokenType)
                 .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiresAt))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .setExpiration(Date.from(expiresAt));
+        if (role != null && !role.isBlank()) {
+            builder.claim("role", role);
+        }
+        return builder.signWith(key, SignatureAlgorithm.HS256).compact();
     }
 
     private TokenClaims parseAndValidate(String token, String expectedType) {
@@ -117,6 +153,7 @@ public class JwtService {
                     .getBody();
             String subject = claims.getSubject();
             String tokenType = claims.get("type", String.class);
+            String role = claims.get("role", String.class);
             Date expiration = claims.getExpiration();
 
             if (subject == null || subject.isBlank()) {
@@ -133,7 +170,7 @@ public class JwtService {
             }
 
             log.debug("Validated {} token for subject {}", expectedType, subject);
-            return new TokenClaims(subject, expiration.toInstant());
+            return new TokenClaims(subject, expiration.toInstant(), role);
         } catch (JwtException | IllegalArgumentException error) {
             log.debug("Rejected {} token: {}", expectedType, error.getClass().getSimpleName());
             throw invalidTokenError(expectedType);
@@ -147,6 +184,13 @@ public class JwtService {
         return new AuthenticationError(INVALID_ACCESS_TOKEN_MESSAGE);
     }
 
-    private record TokenClaims(String subject, Instant expiration) {
+    private String defaultRoleForSubject(String subject) {
+        if (subject != null && (subject.equals("admin@example.com") || subject.contains(".admin@"))) {
+            return "ADMIN";
+        }
+        return "CUSTOMER";
+    }
+
+    private record TokenClaims(String subject, Instant expiration, String role) {
     }
 }

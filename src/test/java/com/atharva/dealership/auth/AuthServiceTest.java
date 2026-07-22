@@ -49,7 +49,7 @@ class AuthServiceTest {
         User user = new User("valid.user@example.com", "$2a$10$encoded-password");
         when(userRepository.findByEmail("valid.user@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("StrongPassword123!", "$2a$10$encoded-password")).thenReturn(true);
-        when(jwtService.generateAccessToken("valid.user@example.com")).thenReturn("access.jwt");
+        when(jwtService.generateAccessToken("valid.user@example.com", "CUSTOMER")).thenReturn("access.jwt");
         when(jwtService.generateRefreshToken("valid.user@example.com")).thenReturn("refresh.jwt");
         when(jwtService.getAccessTokenExpirationSeconds()).thenReturn(900L);
 
@@ -67,7 +67,7 @@ class AuthServiceTest {
         User user = new User("test@example.com", "$2a$10$encoded-password");
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("StrongPassword123!", "$2a$10$encoded-password")).thenReturn(true);
-        when(jwtService.generateAccessToken("test@example.com")).thenReturn("access.jwt");
+        when(jwtService.generateAccessToken("test@example.com", "CUSTOMER")).thenReturn("access.jwt");
         when(jwtService.generateRefreshToken("test@example.com")).thenReturn("refresh.jwt");
         when(jwtService.getAccessTokenExpirationSeconds()).thenReturn(900L);
 
@@ -107,7 +107,7 @@ class AuthServiceTest {
         when(jwtService.isValidRefreshToken("refresh.jwt")).thenReturn(true);
         when(jwtService.extractRefreshSubject("refresh.jwt")).thenReturn("valid.user@example.com");
         when(userRepository.findByEmail("valid.user@example.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateAccessToken("valid.user@example.com")).thenReturn("new.access.jwt");
+        when(jwtService.generateAccessToken("valid.user@example.com", "CUSTOMER")).thenReturn("new.access.jwt");
         when(jwtService.generateRefreshToken("valid.user@example.com")).thenReturn("new.refresh.jwt");
         when(jwtService.getAccessTokenExpirationSeconds()).thenReturn(900L);
 

@@ -39,8 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authorization.substring(7);
             if (jwtService.isValidAccessToken(token)) {
                 String subject = jwtService.extractSubject(token);
+                String role = jwtService.extractRole(token);
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(subject, null, authoritiesFor(subject));
+                        new UsernamePasswordAuthenticationToken(subject, null, authoritiesFor(role));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.debug("Authenticated request for subject {} on {}", subject, request.getRequestURI());
             } else {
@@ -62,15 +63,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.debug("JWT authentication filter completed for {} {}", request.getMethod(), request.getRequestURI());
     }
 
-    private List<SimpleGrantedAuthority> authoritiesFor(String subject) {
-        if (isAdminSubject(subject)) {
+    private List<SimpleGrantedAuthority> authoritiesFor(String role) {
+        if ("ADMIN".equals(role)) {
             return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
         return List.of();
-    }
-
-    private boolean isAdminSubject(String subject) {
-        return subject != null && subject.split("@", 2)[0].contains("admin");
     }
 
     private boolean isPublicEndpoint(HttpServletRequest request) {

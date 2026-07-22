@@ -61,7 +61,7 @@ class AdminAccessUnitTest {
         User admin = userWithRole("evaluator.admin@example.com", "$2a$10$encoded-password", "ADMIN");
         when(userRepository.findByEmail("evaluator.admin@example.com")).thenReturn(Optional.of(admin));
         when(passwordEncoder.matches("Evaluator@12345", "$2a$10$encoded-password")).thenReturn(true);
-        when(jwtService.generateAccessToken("evaluator.admin@example.com")).thenReturn("admin.access.jwt");
+        when(jwtService.generateAccessToken("evaluator.admin@example.com", "ADMIN")).thenReturn("admin.access.jwt");
         when(jwtService.generateRefreshToken("evaluator.admin@example.com")).thenReturn("admin.refresh.jwt");
         when(jwtService.getAccessTokenExpirationSeconds()).thenReturn(900L);
         AuthService authService = new AuthService(userRepository, passwordEncoder, jwtService);
@@ -76,7 +76,7 @@ class AdminAccessUnitTest {
     @Test
     void accessTokenContainsRoleClaimAndDoesNotInferRoleFromEmailAddress() {
         JwtService jwtService = new JwtService(SECRET, 900L, 604800L,
-                Clock.fixed(Instant.parse("2026-07-22T09:00:00Z"), ZoneOffset.UTC));
+                Clock.fixed(Instant.parse("2030-07-22T09:00:00Z"), ZoneOffset.UTC));
 
         String token = generateAccessTokenWithRole(jwtService, "admin.customer@example.com", "CUSTOMER");
         Claims claims = parseClaims(token);

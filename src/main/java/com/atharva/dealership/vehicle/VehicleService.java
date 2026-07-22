@@ -73,6 +73,36 @@ public class VehicleService {
         log.info("Vehicle deletion completed successfully for vehicle id: {}", id);
     }
 
+    public Vehicle purchase(Long id) {
+        log.info("Starting vehicle purchase for vehicle id: {}", id);
+        if (id == null || id <= 0) {
+            log.warn("Vehicle purchase validation failed: id is missing or non-positive");
+            throw new ValidationError("Vehicle id must be greater than zero.");
+        }
+
+        Vehicle existingVehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Vehicle purchase failed because vehicle id {} was not found", id);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found.");
+                });
+
+        if (existingVehicle.getQuantityInStock() == null || existingVehicle.getQuantityInStock() <= 0) {
+            log.warn("Vehicle purchase failed because vehicle id {} is out of stock", id);
+            throw new ValidationError("Vehicle is out of stock.");
+        }
+
+        Vehicle vehicle = new Vehicle(
+                existingVehicle.getId(),
+                existingVehicle.getMake(),
+                existingVehicle.getModel(),
+                existingVehicle.getCategory(),
+                existingVehicle.getPrice(),
+                existingVehicle.getQuantityInStock() - 1);
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        log.info("Vehicle purchase completed successfully for vehicle id: {}", savedVehicle.getId());
+        return savedVehicle;
+    }
+
     public List<Vehicle> findAvailableVehicles() {
         log.info("Starting available vehicle listing");
         List<Vehicle> availableVehicles = vehicleRepository.findAll().stream()

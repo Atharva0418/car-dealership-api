@@ -376,6 +376,77 @@ class VehicleServiceTest {
         verify(vehicleRepository, never()).delete(any(Vehicle.class));
     }
 
+    @Test
+    void purchaseExistingVehicleDecreasesQuantityByOneAndReturnsSavedVehicle() {
+        long vehicleId = 42L;
+        Vehicle existingVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                5);
+        Vehicle savedVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                4);
+
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
+        when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
+
+        Vehicle result = vehicleService.purchase(vehicleId);
+
+        ArgumentCaptor<Vehicle> vehicleCaptor = ArgumentCaptor.forClass(Vehicle.class);
+        verify(vehicleRepository, times(1)).findById(vehicleId);
+        verify(vehicleRepository, times(1)).save(vehicleCaptor.capture());
+
+        Vehicle persistedVehicle = vehicleCaptor.getValue();
+        assertEquals(vehicleId, persistedVehicle.getId());
+        assertEquals("Toyota", persistedVehicle.getMake());
+        assertEquals("Camry", persistedVehicle.getModel());
+        assertEquals("Sedan", persistedVehicle.getCategory());
+        assertEquals(new BigDecimal("28000.00"), persistedVehicle.getPrice());
+        assertEquals(4, persistedVehicle.getQuantityInStock());
+        assertEquals(4, result.getQuantityInStock());
+    }
+
+    @Test
+    void purchaseOutOfStockVehicleThrowsValidationErrorAndDoesNotSave() {
+        long vehicleId = 42L;
+        Vehicle existingVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                0);
+
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
+
+        assertThrows(ValidationError.class, () -> vehicleService.purchase(vehicleId));
+
+        verify(vehicleRepository, times(1)).findById(vehicleId);
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+    }
+
+    @Test
+    void purchaseMissingVehicleThrowsNotFoundAndDoesNotSave() {
+        long missingVehicleId = 404L;
+
+        when(vehicleRepository.findById(missingVehicleId)).thenReturn(Optional.empty());
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class,
+                () -> vehicleService.purchase(missingVehicleId));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+        verify(vehicleRepository, times(1)).findById(missingVehicleId);
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+    }
+
     private CreateVehicleRequest validRequestWithMake(String make) {
         return new CreateVehicleRequest(
                 make,

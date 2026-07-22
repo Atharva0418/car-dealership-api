@@ -83,6 +83,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if ("DELETE".equals(request.getMethod()) && request.getRequestURI().startsWith("/api/vehicles/")) {
             return HttpServletResponse.SC_UNAUTHORIZED;
         }
+        if ("POST".equals(request.getMethod())
+                && request.getRequestURI().startsWith("/api/vehicles/")
+                && request.getRequestURI().endsWith("/purchase")) {
+            return HttpServletResponse.SC_UNAUTHORIZED;
+        }
         return HttpServletResponse.SC_FORBIDDEN;
     }
 }

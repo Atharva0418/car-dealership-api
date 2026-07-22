@@ -25,9 +25,11 @@ const initialFilterState: VehicleFilterFormState = {
 };
 
 const categoryOptions = [
-  { label: 'Sedan cars', value: 'Sedan' },
+  { label: 'Sedans', value: 'Sedan' },
   { label: 'SUVs', value: 'SUV' },
   { label: 'Hatchbacks', value: 'Hatchback' },
+  { label: 'Supercars', value: 'Supercars' },
+  { label: 'Sports cars', value: 'Sports cars' },
 ];
 
 function getOptionalNumber(value: string): number | undefined {

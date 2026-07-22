@@ -34,8 +34,8 @@ const initialVehicleAddFormState: VehicleFormState = {
   quantityInStock: '',
 };
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
+const currencyFormatter = new Intl.NumberFormat('en-IN', {
+  currency: 'INR',
   maximumFractionDigits: 0,
   style: 'currency',
 });
@@ -259,9 +259,11 @@ function VehicleAddForm({ onCreated }: VehicleAddFormProps) {
             value={form.category}
           >
             <option value="">Select category</option>
-            <option value="Sedan">Sedan cars</option>
+            <option value="Sedan">Sedans</option>
             <option value="SUV">SUVs</option>
             <option value="Hatchback">Hatchbacks</option>
+            <option value="Supercars">Supercars</option>
+            <option value="Sports cars">Sports cars</option>
           </select>
           {errors.category ? (
             <p className="mt-1 text-xs font-semibold text-red-600">{errors.category}</p>
@@ -436,9 +438,11 @@ function VehicleEditForm({ onCancel, onUpdated, vehicle }: VehicleEditFormProps)
             value={form.category}
           >
             <option value="">Select category</option>
-            <option value="Sedan">Sedan cars</option>
+            <option value="Sedan">Sedans</option>
             <option value="SUV">SUVs</option>
             <option value="Hatchback">Hatchbacks</option>
+            <option value="Supercars">Supercars</option>
+            <option value="Sports cars">Sports cars</option>
           </select>
           {errors.category ? (
             <p className="mt-1 text-xs font-semibold text-red-600">{errors.category}</p>

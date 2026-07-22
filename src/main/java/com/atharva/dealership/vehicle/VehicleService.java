@@ -56,6 +56,23 @@ public class VehicleService {
         return savedVehicle;
     }
 
+    public void deleteById(Long id) {
+        log.info("Starting vehicle deletion for vehicle id: {}", id);
+        if (id == null || id <= 0) {
+            log.warn("Vehicle deletion validation failed: id is missing or non-positive");
+            throw new ValidationError("Vehicle id must be greater than zero.");
+        }
+
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Vehicle deletion failed because vehicle id {} was not found", id);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found.");
+                });
+
+        vehicleRepository.delete(vehicle);
+        log.info("Vehicle deletion completed successfully for vehicle id: {}", id);
+    }
+
     public List<Vehicle> findAvailableVehicles() {
         log.info("Starting available vehicle listing");
         List<Vehicle> availableVehicles = vehicleRepository.findAll().stream()

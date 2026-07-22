@@ -36,22 +36,22 @@ export function resetRequestSnapshots(): void {
 }
 
 export const handlers = [
-  http.all('http://localhost/api/echo', async ({ request }) => {
+  http.all('*/api/echo', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({ ok: true });
   }),
-  http.get('http://localhost/api/success', async ({ request }) => {
+  http.get('*/api/success', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({ message: 'done' });
   }),
-  http.get('http://localhost/api/failure', async ({ request }) => {
+  http.get('*/api/failure', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({ message: 'bad request' }, { status: 400 });
   }),
-  http.get('http://localhost/api/text-failure', async ({ request }) => {
+  http.get('*/api/text-failure', async ({ request }) => {
     await snapshotRequest(request);
 
     return new HttpResponse('Plain backend error', { status: 400 });

@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { setToken } from '../../../features/auth/api/tokenStore';
 import { ApiError, request } from '../client';
@@ -10,6 +10,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   setToken(null);
   resetRequestSnapshots();
   server.resetHandlers();
@@ -24,6 +25,17 @@ describe('request', () => {
     await request('/echo');
 
     expect(new URL(getLastRequest().url).pathname).toBe('/api/echo');
+  });
+
+  it('uses VITE_API_BASE_URL when it is configured', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://car-api.onrender.com');
+
+    await request('/echo');
+
+    const capturedUrl = new URL(getLastRequest().url);
+
+    expect(capturedUrl.origin).toBe('https://car-api.onrender.com');
+    expect(capturedUrl.pathname).toBe('/api/echo');
   });
 
   it('sends JSON body with correct Content-Type on POST', async () => {
@@ -75,10 +87,12 @@ describe('request', () => {
   });
 
   it('attaches Authorization header when getToken returns a token', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://car-api.onrender.com');
     setToken('abc');
 
     await request('/echo');
 
+    expect(new URL(getLastRequest().url).origin).toBe('https://car-api.onrender.com');
     expect(getLastRequest().headers.authorization).toBe('Bearer abc');
   });
 

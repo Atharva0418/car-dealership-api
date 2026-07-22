@@ -19,7 +19,8 @@ export class ApiError extends Error {
 }
 
 function buildApiUrl(path: string): string {
-  const baseUrl = globalThis.location?.origin ?? 'http://localhost';
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  const baseUrl = configuredBaseUrl || globalThis.location?.origin || 'http://localhost';
 
   return new URL(`/api${path}`, baseUrl).toString();
 }

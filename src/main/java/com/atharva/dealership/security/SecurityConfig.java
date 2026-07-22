@@ -43,6 +43,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.HEAD, "/api/health")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/vehicles/*/restock")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/vehicles/*")
                     .hasRole("ADMIN")
                     .anyRequest()
@@ -53,7 +55,7 @@ public class SecurityConfig {
 
   @Bean
   CorsConfigurationSource corsConfigurationSource(
-      @Value("${FRONTEND_ORIGINS}") String frontendOrigins) {
+      @Value("${FRONTEND_ORIGINS:http://localhost:5173}") String frontendOrigins) {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(parseOrigins(frontendOrigins));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));

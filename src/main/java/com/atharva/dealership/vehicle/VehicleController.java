@@ -1,6 +1,7 @@
 package com.atharva.dealership.vehicle;
 
 import com.atharva.dealership.dto.CreateVehicleRequest;
+import com.atharva.dealership.dto.RestockVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -76,6 +77,19 @@ public class VehicleController {
         log.info("Received vehicle purchase request for vehicle id: {}", id);
         Vehicle vehicle = vehicleService.purchase(id);
         log.info("Vehicle purchase request handled successfully for vehicle id: {}", vehicle.getId());
+        return ResponseEntity.ok(vehicle);
+    }
+
+    @PostMapping("/{id}/restock")
+    public ResponseEntity<Vehicle> restock(@PathVariable Long id, @RequestBody RestockVehicleRequest request) {
+        log.info("Received vehicle restock request for vehicle id: {}", id);
+        if (request == null || request.quantity() == null) {
+            log.warn("Rejecting vehicle restock request with missing quantity for vehicle id: {}", id);
+            throw new ValidationError("Restock quantity is required.");
+        }
+
+        Vehicle vehicle = vehicleService.restock(id, request.quantity());
+        log.info("Vehicle restock request handled successfully for vehicle id: {}", vehicle.getId());
         return ResponseEntity.ok(vehicle);
     }
 

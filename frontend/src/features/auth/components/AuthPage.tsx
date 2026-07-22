@@ -16,7 +16,7 @@ const modeContent = {
   login: {
     heading: 'Welcome back',
     eyebrow: 'Secure access',
-    description: 'Sign in to manage inventory, listings, and dealership workflows.',
+    description: 'Sign in to browse cars and purchase with ease.',
     button: 'Login',
     loading: 'Signing in...',
   },

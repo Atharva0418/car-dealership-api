@@ -83,10 +83,6 @@ describe('inventory dashboard', () => {
   });
 
   it('calls GET /api/vehicles with the authenticated access token', async () => {
-    server.use(
-      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
-    );
-
     renderAuthenticatedApp();
 
     await screen.findByText('Toyota');

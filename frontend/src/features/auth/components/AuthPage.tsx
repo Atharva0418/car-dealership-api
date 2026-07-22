@@ -206,7 +206,7 @@ export function AuthPage() {
     try {
       if (mode === 'login') {
         const response = await loginApi({ email, password });
-        auth.login(response.token, response.refreshToken, email);
+        auth.login(response.accessToken, response.refreshToken, email);
         return;
       }
 

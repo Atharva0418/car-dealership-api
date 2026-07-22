@@ -79,9 +79,9 @@ describe('vehicles API', () => {
     const payload = {
       make: 'Toyota',
       model: 'Camry',
-      year: 2024,
       price: 28000,
       category: 'sedan',
+      quantityInStock: 4,
     };
 
     await createVehicle(payload);

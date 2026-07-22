@@ -35,7 +35,11 @@ async function parseResponseBody(response: Response): Promise<unknown> {
     return undefined;
   }
 
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {

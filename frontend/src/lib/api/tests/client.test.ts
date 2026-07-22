@@ -66,6 +66,14 @@ describe('request', () => {
     await expect(request('/failure')).rejects.toBeInstanceOf(ApiError);
   });
 
+  it('keeps plain text error responses as text on non-2xx', async () => {
+    await expect(request('/text-failure')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 400,
+      body: 'Plain backend error',
+    });
+  });
+
   it('attaches Authorization header when getToken returns a token', async () => {
     setToken('abc');
 

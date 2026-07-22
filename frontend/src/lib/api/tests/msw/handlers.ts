@@ -51,7 +51,12 @@ export const handlers = [
 
     return HttpResponse.json({ message: 'bad request' }, { status: 400 });
   }),
-  http.post('http://localhost/api/auth/login', async ({ request }) => {
+  http.get('http://localhost/api/text-failure', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return new HttpResponse('Plain backend error', { status: 400 });
+  }),
+  http.post('*/api/auth/login', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({
@@ -59,7 +64,7 @@ export const handlers = [
       refreshToken: 'refresh-token',
     });
   }),
-  http.post('http://localhost/api/auth/register', async ({ request }) => {
+  http.post('*/api/auth/register', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({
@@ -67,7 +72,7 @@ export const handlers = [
       refreshToken: 'refresh-token',
     });
   }),
-  http.post('http://localhost/api/auth/refresh', async ({ request }) => {
+  http.post('*/api/auth/refresh', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({

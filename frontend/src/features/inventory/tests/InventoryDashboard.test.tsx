@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -53,6 +53,16 @@ function renderAuthenticatedApp() {
   );
 }
 
+async function findVehicleCard(make: string) {
+  const card = (await screen.findByText(make)).closest('article');
+
+  if (!card) {
+    throw new Error(`Expected ${make} to be rendered inside a vehicle card.`);
+  }
+
+  return card;
+}
+
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
 });
@@ -91,6 +101,54 @@ describe('inventory dashboard', () => {
     expect(screen.getByText('SUV')).not.toBeNull();
     expect(screen.getByText(/\$41,500/)).not.toBeNull();
     expect(screen.getByText(/0\s+in stock/i)).not.toBeNull();
+  });
+
+  it('disables the Purchase button for vehicles with zero stock', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp();
+
+    const outOfStockVehicle = await findVehicleCard('Ford');
+    const purchaseButton = within(outOfStockVehicle).getByRole('button', {
+      name: /purchase/i,
+    }) as HTMLButtonElement;
+
+    expect(purchaseButton.disabled).toBe(true);
+  });
+
+  it('enables the Purchase button for vehicles with stock above zero', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp();
+
+    const inStockVehicle = await findVehicleCard('Toyota');
+    const purchaseButton = within(inStockVehicle).getByRole('button', {
+      name: /purchase/i,
+    }) as HTMLButtonElement;
+
+    expect(purchaseButton.disabled).toBe(false);
+  });
+
+  it('shows a friendly coming soon message without mutating stock when an enabled Purchase button is clicked', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp();
+
+    const inStockVehicle = await findVehicleCard('Toyota');
+    fireEvent.click(
+      within(inStockVehicle).getByRole('button', {
+        name: /purchase/i,
+      }),
+    );
+
+    expect(await screen.findByText(/purchase flow coming soon/i)).not.toBeNull();
+    expect(within(inStockVehicle).getByText(/4\s+in stock/i)).not.toBeNull();
   });
 
   it('calls GET /api/vehicles with the authenticated access token', async () => {

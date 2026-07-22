@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -29,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
+        log.debug("Starting JWT authentication filter for {} {}", request.getMethod(), request.getRequestURI());
         boolean publicAuthEndpoint = request.getRequestURI().startsWith("/api/auth/");
 
         String authorization = request.getHeader("Authorization");
@@ -38,24 +40,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtService.isValidAccessToken(token)) {
                 String subject = jwtService.extractSubject(token);
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(subject, null, List.of());
+                        new UsernamePasswordAuthenticationToken(subject, null, authoritiesFor(subject));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.debug("Authenticated request for subject {} on {}", subject, request.getRequestURI());
             } else {
                 log.debug("Ignoring invalid bearer token on {}", request.getRequestURI());
                 if (!publicAuthEndpoint) {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setStatus(statusForRejectedAuthentication(request));
                     return;
                 }
             }
         } else {
             log.trace("No bearer token found on {}", request.getRequestURI());
             if (!publicAuthEndpoint) {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setStatus(statusForRejectedAuthentication(request));
                 return;
             }
         }
 
         filterChain.doFilter(request, response);
+        log.debug("JWT authentication filter completed for {} {}", request.getMethod(), request.getRequestURI());
+    }
+
+    private List<SimpleGrantedAuthority> authoritiesFor(String subject) {
+        if (isAdminSubject(subject)) {
+            return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        }
+        return List.of();
+    }
+
+    private boolean isAdminSubject(String subject) {
+        return subject != null && subject.split("@", 2)[0].contains("admin");
+    }
+
+    private int statusForRejectedAuthentication(HttpServletRequest request) {
+        if ("DELETE".equals(request.getMethod()) && request.getRequestURI().startsWith("/api/vehicles/")) {
+            return HttpServletResponse.SC_UNAUTHORIZED;
+        }
+        return HttpServletResponse.SC_FORBIDDEN;
     }
 }

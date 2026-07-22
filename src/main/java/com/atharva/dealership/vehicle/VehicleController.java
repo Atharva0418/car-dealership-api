@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,6 +61,14 @@ public class VehicleController {
         Vehicle vehicle = vehicleService.update(id, request);
         log.info("Vehicle update request handled successfully for vehicle id: {}", vehicle.getId());
         return ResponseEntity.ok(vehicle);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("Received vehicle deletion request for vehicle id: {}", id);
+        vehicleService.deleteById(id);
+        log.info("Vehicle deletion request handled successfully for vehicle id: {}", id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping

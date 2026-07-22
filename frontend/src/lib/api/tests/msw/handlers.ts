@@ -51,4 +51,28 @@ export const handlers = [
 
     return HttpResponse.json({ message: 'bad request' }, { status: 400 });
   }),
+  http.post('http://localhost/api/auth/login', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json({
+      token: 'access-token',
+      refreshToken: 'refresh-token',
+    });
+  }),
+  http.post('http://localhost/api/auth/register', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json({
+      token: 'access-token',
+      refreshToken: 'refresh-token',
+    });
+  }),
+  http.post('http://localhost/api/auth/refresh', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json({
+      token: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+    });
+  }),
 ];

@@ -75,6 +75,7 @@ function SkeletonCard() {
 }
 
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+  const [purchaseMessage, setPurchaseMessage] = useState('');
   const isOutOfStock = vehicle.quantityInStock === 0;
 
   return (
@@ -104,10 +105,27 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       </div>
 
       <div className="mt-8 border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold uppercase text-slate-500">Listed price</p>
-        <p className="mt-1 text-3xl font-bold tracking-normal text-slate-950">
-          {currencyFormatter.format(vehicle.price)}
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Listed price</p>
+            <p className="mt-1 text-3xl font-bold tracking-normal text-slate-950">
+              {currencyFormatter.format(vehicle.price)}
+            </p>
+          </div>
+          <button
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
+            disabled={isOutOfStock}
+            onClick={() => setPurchaseMessage('Purchase flow coming soon.')}
+            type="button"
+          >
+            Purchase
+          </button>
+        </div>
+        {purchaseMessage ? (
+          <p className="mt-3 rounded-lg bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 ring-1 ring-inset ring-cyan-100">
+            {purchaseMessage}
+          </p>
+        ) : null}
       </div>
     </article>
   );

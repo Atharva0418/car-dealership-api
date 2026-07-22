@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ApiError } from '../../../shared/api/client';
-import { listVehicles, searchVehicles } from '../api/vehicles';
+import { listVehicles, purchaseVehicle, searchVehicles } from '../api/vehicles';
 import type { VehicleSearchFilters } from '../api/vehicles';
 import type { Vehicle } from '../api/types';
 import { VehicleFilterBar } from '../components/VehicleFilterBar';
@@ -74,9 +74,24 @@ function SkeletonCard() {
   );
 }
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const [purchaseMessage, setPurchaseMessage] = useState('');
+type VehicleCardProps = {
+  onPurchase: (id: string) => Promise<void>;
+  vehicle: Vehicle;
+};
+
+function VehicleCard({ onPurchase, vehicle }: VehicleCardProps) {
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const isOutOfStock = vehicle.quantityInStock === 0;
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+
+    try {
+      await onPurchase(vehicle.id);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   return (
     <article className="group flex min-h-48 animate-[auth-panel-enter_220ms_ease-out] flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 transition duration-200 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-950/10">
@@ -114,18 +129,13 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           </div>
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
-            disabled={isOutOfStock}
-            onClick={() => setPurchaseMessage('Purchase flow coming soon.')}
+            disabled={isOutOfStock || isPurchasing}
+            onClick={() => void handlePurchase()}
             type="button"
           >
             Purchase
           </button>
         </div>
-        {purchaseMessage ? (
-          <p className="mt-3 rounded-lg bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 ring-1 ring-inset ring-cyan-100">
-            {purchaseMessage}
-          </p>
-        ) : null}
       </div>
     </article>
   );
@@ -169,6 +179,16 @@ export function InventoryDashboardPage() {
       setErrorMessage(getErrorMessage(error));
       setStatus('error');
     }
+  }, []);
+
+  const handlePurchase = useCallback(async (id: string) => {
+    const purchasedVehicle = await purchaseVehicle(id);
+
+    setVehicles((currentVehicles) =>
+      currentVehicles.map((vehicle) =>
+        vehicle.id === purchasedVehicle.id ? purchasedVehicle : vehicle,
+      ),
+    );
   }, []);
 
   useEffect(() => {
@@ -245,7 +265,7 @@ export function InventoryDashboardPage() {
       {status === 'success' && vehicles.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            <VehicleCard key={vehicle.id} onPurchase={handlePurchase} vehicle={vehicle} />
           ))}
         </div>
       ) : null}

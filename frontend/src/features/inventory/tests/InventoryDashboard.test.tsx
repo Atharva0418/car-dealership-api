@@ -133,9 +133,24 @@ describe('inventory dashboard', () => {
     expect(purchaseButton.disabled).toBe(false);
   });
 
-  it('shows a friendly coming soon message without mutating stock when an enabled Purchase button is clicked', async () => {
+  it('purchases an in-stock vehicle and renders the decremented stock returned by the API', async () => {
+    let purchaseRequestAuthorization: string | null | undefined;
+    let purchaseRequestMethod: string | undefined;
+    let purchaseRequestUrl: string | undefined;
+
     server.use(
       http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.post('http://localhost/api/vehicles/:id/purchase', ({ request, params }) => {
+        purchaseRequestAuthorization = request.headers.get('authorization');
+        purchaseRequestMethod = request.method;
+        purchaseRequestUrl = request.url;
+
+        return HttpResponse.json({
+          ...vehicles[0],
+          id: params.id,
+          quantityInStock: 3,
+        });
+      }),
     );
 
     renderAuthenticatedApp();
@@ -147,8 +162,15 @@ describe('inventory dashboard', () => {
       }),
     );
 
-    expect(await screen.findByText(/purchase flow coming soon/i)).not.toBeNull();
-    expect(within(inStockVehicle).getByText(/4\s+in stock/i)).not.toBeNull();
+    await waitFor(() => {
+      expect(within(inStockVehicle).getByText(/3\s+in stock/i)).not.toBeNull();
+    });
+
+    expect(purchaseRequestUrl).toBeDefined();
+    expect(purchaseRequestMethod).toBe('POST');
+    expect(new URL(purchaseRequestUrl as string).pathname).toBe('/api/vehicles/vehicle-1/purchase');
+    expect(purchaseRequestAuthorization).toBe('Bearer access-token');
+    expect(screen.queryByText(/purchase flow coming soon/i)).toBeNull();
   });
 
   it('calls GET /api/vehicles with the authenticated access token', async () => {

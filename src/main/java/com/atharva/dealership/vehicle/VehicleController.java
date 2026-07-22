@@ -71,6 +71,14 @@ public class VehicleController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @PostMapping("/{id}/purchase")
+    public ResponseEntity<Vehicle> purchase(@PathVariable Long id) {
+        log.info("Received vehicle purchase request for vehicle id: {}", id);
+        Vehicle vehicle = vehicleService.purchase(id);
+        log.info("Vehicle purchase request handled successfully for vehicle id: {}", vehicle.getId());
+        return ResponseEntity.ok(vehicle);
+    }
+
     @GetMapping
     public ResponseEntity<List<Vehicle>> listAvailableVehicles() {
         log.info("Starting available vehicle listing request");

@@ -17,7 +17,7 @@ Password: admin123
 
 ### Architecutre
 
-[Architecture](docs/images/architecture.png)
+![Architecture](docs/images/architecture.png)
 
 ## Tech Stack
 

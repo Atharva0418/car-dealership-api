@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ApiError } from '../../../shared/api/client';
+import { useAuth } from '../../auth/context/AuthContext';
 import { listVehicles, purchaseVehicle, searchVehicles } from '../api/vehicles';
 import type { VehicleSearchFilters } from '../api/vehicles';
 import type { Vehicle } from '../api/types';
@@ -75,11 +76,12 @@ function SkeletonCard() {
 }
 
 type VehicleCardProps = {
+  canPurchase: boolean;
   onPurchase: (id: string) => Promise<void>;
   vehicle: Vehicle;
 };
 
-function VehicleCard({ onPurchase, vehicle }: VehicleCardProps) {
+function VehicleCard({ canPurchase, onPurchase, vehicle }: VehicleCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const isOutOfStock = vehicle.quantityInStock === 0;
 
@@ -127,14 +129,16 @@ function VehicleCard({ onPurchase, vehicle }: VehicleCardProps) {
               {currencyFormatter.format(vehicle.price)}
             </p>
           </div>
-          <button
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
-            disabled={isOutOfStock || isPurchasing}
-            onClick={() => void handlePurchase()}
-            type="button"
-          >
-            Purchase
-          </button>
+          {canPurchase ? (
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
+              disabled={isOutOfStock || isPurchasing}
+              onClick={() => void handlePurchase()}
+              type="button"
+            >
+              Purchase
+            </button>
+          ) : null}
         </div>
       </div>
     </article>
@@ -142,6 +146,7 @@ function VehicleCard({ onPurchase, vehicle }: VehicleCardProps) {
 }
 
 export function InventoryDashboardPage() {
+  const { isAdmin } = useAuth();
   const [status, setStatus] = useState<InventoryStatus>('loading');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -265,7 +270,12 @@ export function InventoryDashboardPage() {
       {status === 'success' && vehicles.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} onPurchase={handlePurchase} vehicle={vehicle} />
+            <VehicleCard
+              canPurchase={!isAdmin}
+              key={vehicle.id}
+              onPurchase={handlePurchase}
+              vehicle={vehicle}
+            />
           ))}
         </div>
       ) : null}

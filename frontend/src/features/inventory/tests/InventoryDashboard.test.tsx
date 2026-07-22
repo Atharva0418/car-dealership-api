@@ -40,10 +40,11 @@ const filteredVehicles = [
   },
 ];
 
-function renderAuthenticatedApp() {
+function renderAuthenticatedApp(role: 'CUSTOMER' | 'ADMIN' = 'CUSTOMER') {
   localStorage.setItem('accessToken', 'access-token');
   localStorage.setItem('refreshToken', 'refresh-token');
   localStorage.setItem('email', 'manager@example.com');
+  localStorage.setItem('role', role);
   setToken('access-token');
 
   return render(
@@ -131,6 +132,17 @@ describe('inventory dashboard', () => {
     }) as HTMLButtonElement;
 
     expect(purchaseButton.disabled).toBe(false);
+  });
+
+  it('does not show Purchase buttons for admins', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    expect(await screen.findByText('Toyota')).not.toBeNull();
+    expect(screen.queryAllByRole('button', { name: /purchase/i })).toHaveLength(0);
   });
 
   it('purchases an in-stock vehicle and renders the decremented stock returned by the API', async () => {

@@ -64,6 +64,7 @@ export const handlers = [
       refreshToken: 'refresh-token',
       tokenType: 'Bearer',
       expiresInSeconds: 900,
+      role: 'CUSTOMER',
     });
   }),
   http.post('*/api/auth/register', async ({ request }) => {
@@ -74,6 +75,7 @@ export const handlers = [
       refreshToken: 'refresh-token',
       tokenType: 'Bearer',
       expiresInSeconds: 900,
+      role: 'CUSTOMER',
     });
   }),
   http.post('*/api/auth/refresh', async ({ request }) => {
@@ -84,6 +86,7 @@ export const handlers = [
       refreshToken: 'new-refresh-token',
       tokenType: 'Bearer',
       expiresInSeconds: 900,
+      role: 'CUSTOMER',
     });
   }),
   http.get('http://localhost/api/vehicles', async ({ request }) => {

@@ -14,6 +14,7 @@ type AuthResponse = {
   refreshToken: string;
   tokenType: string;
   expiresInSeconds: number;
+  role: 'CUSTOMER' | 'ADMIN';
 };
 
 export function register(payload: AuthCredentials): Promise<AuthResponse> {

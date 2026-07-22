@@ -94,23 +94,23 @@ public class VehicleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Vehicle>> listAvailableVehicles() {
-        log.info("Starting available vehicle listing request");
-        List<Vehicle> availableVehicles = vehicleService.findAvailableVehicles();
-        log.info("Available vehicle listing request completed successfully with {} vehicles", availableVehicles.size());
-        return ResponseEntity.ok(availableVehicles);
+    public ResponseEntity<List<Vehicle>> listVehicles() {
+        log.info("Starting vehicle listing request");
+        List<Vehicle> vehicles = vehicleService.findVehicles();
+        log.info("Vehicle listing request completed successfully with {} vehicles", vehicles.size());
+        return ResponseEntity.ok(vehicles);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Vehicle>> searchAvailableVehicles(
+    public ResponseEntity<List<Vehicle>> searchVehicles(
             @RequestParam(required = false) String make,
             @RequestParam(required = false) String model,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice) {
-        log.info("Starting available vehicle search request");
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(make, model, category, minPrice, maxPrice);
-        log.info("Available vehicle search request completed successfully with {} vehicles", vehicles.size());
+        log.info("Starting vehicle search request");
+        List<Vehicle> vehicles = vehicleService.searchVehicles(make, model, category, minPrice, maxPrice);
+        log.info("Vehicle search request completed successfully with {} vehicles", vehicles.size());
         return ResponseEntity.ok(vehicles);
     }
 }

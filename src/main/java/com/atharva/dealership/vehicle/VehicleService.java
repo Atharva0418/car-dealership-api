@@ -133,14 +133,36 @@ public class VehicleService {
         return savedVehicle;
     }
 
+    public List<Vehicle> findVehicles() {
+        log.info("Starting vehicle listing");
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        log.info("Vehicle listing completed successfully with {} vehicles", vehicles.size());
+        return vehicles;
+    }
+
     public List<Vehicle> findAvailableVehicles() {
-        log.info("Starting available vehicle listing");
-        List<Vehicle> availableVehicles = vehicleRepository.findAll().stream()
-                .filter(vehicle -> vehicle.getQuantityInStock() != null)
-                .filter(vehicle -> vehicle.getQuantityInStock() > 0)
+        return findVehicles();
+    }
+
+    public List<Vehicle> searchVehicles(
+            String make,
+            String model,
+            String category,
+            BigDecimal minPrice,
+            BigDecimal maxPrice) {
+        log.info("Starting vehicle search");
+        validateSearchPrices(minPrice, maxPrice);
+
+        List<Vehicle> vehicles = vehicleRepository.findAll().stream()
+                .filter(vehicle -> matchesText(make, vehicle.getMake()))
+                .filter(vehicle -> matchesText(model, vehicle.getModel()))
+                .filter(vehicle -> matchesText(category, vehicle.getCategory()))
+                .filter(vehicle -> minPrice == null || vehicle.getPrice().compareTo(minPrice) >= 0)
+                .filter(vehicle -> maxPrice == null || vehicle.getPrice().compareTo(maxPrice) <= 0)
                 .toList();
-        log.info("Available vehicle listing completed successfully with {} vehicles", availableVehicles.size());
-        return availableVehicles;
+
+        log.info("Vehicle search completed successfully with {} vehicles", vehicles.size());
+        return vehicles;
     }
 
     public List<Vehicle> searchAvailableVehicles(
@@ -149,21 +171,7 @@ public class VehicleService {
             String category,
             BigDecimal minPrice,
             BigDecimal maxPrice) {
-        log.info("Starting available vehicle search");
-        validateSearchPrices(minPrice, maxPrice);
-
-        List<Vehicle> vehicles = vehicleRepository.findAll().stream()
-                .filter(vehicle -> vehicle.getQuantityInStock() != null)
-                .filter(vehicle -> vehicle.getQuantityInStock() > 0)
-                .filter(vehicle -> matchesText(make, vehicle.getMake()))
-                .filter(vehicle -> matchesText(model, vehicle.getModel()))
-                .filter(vehicle -> matchesText(category, vehicle.getCategory()))
-                .filter(vehicle -> minPrice == null || vehicle.getPrice().compareTo(minPrice) >= 0)
-                .filter(vehicle -> maxPrice == null || vehicle.getPrice().compareTo(maxPrice) <= 0)
-                .toList();
-
-        log.info("Available vehicle search completed successfully with {} vehicles", vehicles.size());
-        return vehicles;
+        return searchVehicles(make, model, category, minPrice, maxPrice);
     }
 
     private void validate(CreateVehicleRequest request) {

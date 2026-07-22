@@ -25,14 +25,14 @@ class VehicleSearchIntegrationTest {
     }
 
     @Test
-    void searchAvailableVehiclesCombinesMakeCategoryAndPriceRangeAgainstPersistedVehicles() {
+    void searchVehiclesCombinesMakeCategoryAndPriceRangeAgainstPersistedVehicles() {
         vehicleRepository.saveAll(List.of(
                 new Vehicle("Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5),
                 new Vehicle("Toyota", "RAV4", "SUV", new BigDecimal("34000.00"), 4),
                 new Vehicle("Honda", "Accord", "Sedan", new BigDecimal("29000.00"), 3),
                 new Vehicle("Toyota", "Corolla", "Sedan", new BigDecimal("19000.00"), 6)));
 
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(
+        List<Vehicle> vehicles = vehicleService.searchVehicles(
                 "toyota",
                 null,
                 "sedan",
@@ -46,29 +46,31 @@ class VehicleSearchIntegrationTest {
     }
 
     @Test
-    void searchAvailableVehiclesExcludesOutOfStockVehiclesEvenWhenTheyMatchFilters() {
+    void searchVehiclesIncludesOutOfStockVehiclesWhenTheyMatchFilters() {
         vehicleRepository.saveAll(List.of(
                 new Vehicle("Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 0),
                 new Vehicle("Toyota", "Corolla", "Sedan", new BigDecimal("24000.00"), 2)));
 
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(
+        List<Vehicle> vehicles = vehicleService.searchVehicles(
                 "TOYOTA",
                 null,
                 "SEDAN",
                 null,
                 null);
 
-        assertEquals(1, vehicles.size());
-        assertEquals("Corolla", vehicles.getFirst().getModel());
-        assertEquals(2, vehicles.getFirst().getQuantityInStock());
+        assertEquals(2, vehicles.size());
+        assertEquals("Camry", vehicles.getFirst().getModel());
+        assertEquals(0, vehicles.getFirst().getQuantityInStock());
+        assertEquals("Corolla", vehicles.get(1).getModel());
+        assertEquals(2, vehicles.get(1).getQuantityInStock());
     }
 
     @Test
-    void searchAvailableVehiclesWithNoMatchesReturnsEmptyList() {
+    void searchVehiclesWithNoMatchesReturnsEmptyList() {
         vehicleRepository.save(new Vehicle(
                 "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5));
 
-        List<Vehicle> vehicles = vehicleService.searchAvailableVehicles(
+        List<Vehicle> vehicles = vehicleService.searchVehicles(
                 "Ford",
                 null,
                 null,

@@ -261,10 +261,10 @@ class VehicleControllerTest {
     }
 
     @Test
-    void listAvailableVehiclesReturnsOkWithVehicleArray() throws Exception {
-        when(vehicleService.findAvailableVehicles()).thenReturn(List.of(
+    void listVehiclesReturnsOkWithVehicleArray() throws Exception {
+        when(vehicleService.findVehicles()).thenReturn(List.of(
                 new Vehicle(42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5),
-                new Vehicle(43L, "Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 2)));
+                new Vehicle(43L, "Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 0)));
 
         mockMvc.perform(get("/api/vehicles"))
                 .andExpect(status().isOk())
@@ -275,20 +275,21 @@ class VehicleControllerTest {
                 .andExpect(jsonPath("$[0].category").value("Sedan"))
                 .andExpect(jsonPath("$[0].price").value(28000.00))
                 .andExpect(jsonPath("$[0].quantityInStock").value(5))
-                .andExpect(jsonPath("$[1].id").value(43));
+                .andExpect(jsonPath("$[1].id").value(43))
+                .andExpect(jsonPath("$[1].quantityInStock").value(0));
 
-        verify(vehicleService, times(1)).findAvailableVehicles();
+        verify(vehicleService, times(1)).findVehicles();
     }
 
     @Test
-    void listAvailableVehiclesWithNoMatchesReturnsEmptyArray() throws Exception {
-        when(vehicleService.findAvailableVehicles()).thenReturn(List.of());
+    void listVehiclesWithNoMatchesReturnsEmptyArray() throws Exception {
+        when(vehicleService.findVehicles()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/vehicles"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[]"));
 
-        verify(vehicleService, times(1)).findAvailableVehicles();
+        verify(vehicleService, times(1)).findVehicles();
     }
 
     @Test

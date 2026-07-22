@@ -313,24 +313,24 @@ class VehicleServiceTest {
     }
 
     @Test
-    void findAvailableVehiclesReturnsOnlyVehiclesWithPositiveStock() {
+    void findVehiclesReturnsVehiclesWithAnyStockQuantity() {
         Vehicle availableVehicle = new Vehicle(
                 42L, "Toyota", "Camry", "Sedan", new BigDecimal("28000.00"), 5);
         Vehicle outOfStockVehicle = new Vehicle(
                 43L, "Honda", "Civic", "Sedan", new BigDecimal("25000.00"), 0);
         when(vehicleRepository.findAll()).thenReturn(List.of(availableVehicle, outOfStockVehicle));
 
-        List<Vehicle> result = vehicleService.findAvailableVehicles();
+        List<Vehicle> result = vehicleService.findVehicles();
 
-        assertEquals(List.of(availableVehicle), result);
+        assertEquals(List.of(availableVehicle, outOfStockVehicle), result);
         verify(vehicleRepository, times(1)).findAll();
     }
 
     @Test
-    void findAvailableVehiclesWithEmptyRepositoryReturnsEmptyList() {
+    void findVehiclesWithEmptyRepositoryReturnsEmptyList() {
         when(vehicleRepository.findAll()).thenReturn(List.of());
 
-        List<Vehicle> result = vehicleService.findAvailableVehicles();
+        List<Vehicle> result = vehicleService.findVehicles();
 
         assertEquals(List.of(), result);
         verify(vehicleRepository, times(1)).findAll();

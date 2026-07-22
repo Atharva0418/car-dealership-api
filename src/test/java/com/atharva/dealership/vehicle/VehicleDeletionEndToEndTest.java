@@ -48,7 +48,7 @@ class VehicleDeletionEndToEndTest {
     }
 
     @Test
-    void deleteVehicleAsAdminReturnsNoContentAndRemovesVehicleFromAvailableListing() throws Exception {
+    void deleteVehicleAsAdminReturnsNoContentAndRemovesVehicleFromListing() throws Exception {
         Vehicle existingVehicle = saveVehicle();
 
         mockMvc.perform(delete("/api/vehicles/{id}", existingVehicle.getId())

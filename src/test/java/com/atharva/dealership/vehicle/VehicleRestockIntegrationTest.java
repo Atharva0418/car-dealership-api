@@ -44,14 +44,14 @@ class VehicleRestockIntegrationTest {
     }
 
     @Test
-    void restockOutOfStockVehicleMakesItAvailableAgain() {
+    void restockOutOfStockVehicleIncreasesVisibleInventoryQuantity() {
         Vehicle existingVehicle = saveVehicleWithQuantity(0);
 
         Vehicle restockedVehicle = vehicleService.restock(existingVehicle.getId(), 2);
 
         assertEquals(2, restockedVehicle.getQuantityInStock());
-        assertEquals(1, vehicleService.findAvailableVehicles().size());
-        assertEquals(existingVehicle.getId(), vehicleService.findAvailableVehicles().getFirst().getId());
+        assertEquals(1, vehicleService.findVehicles().size());
+        assertEquals(existingVehicle.getId(), vehicleService.findVehicles().getFirst().getId());
     }
 
     @Test

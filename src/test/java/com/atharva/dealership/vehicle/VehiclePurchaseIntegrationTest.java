@@ -47,7 +47,7 @@ class VehiclePurchaseIntegrationTest {
     }
 
     @Test
-    void purchaseLastVehiclePersistsZeroQuantityAndRemovesVehicleFromAvailableListing() {
+    void purchaseLastVehiclePersistsZeroQuantityAndKeepsVehicleInListing() {
         Vehicle existingVehicle = vehicleRepository.save(new Vehicle(
                 "Honda",
                 "Civic",
@@ -63,7 +63,9 @@ class VehiclePurchaseIntegrationTest {
         Vehicle persistedVehicle = vehicleRepository.findById(existingVehicle.getId()).orElseThrow();
         assertEquals(0, persistedVehicle.getQuantityInStock());
 
-        List<Vehicle> availableVehicles = vehicleService.findAvailableVehicles();
-        assertEquals(List.of(), availableVehicles);
+        List<Vehicle> vehicles = vehicleService.findVehicles();
+        assertEquals(1, vehicles.size());
+        assertEquals(existingVehicle.getId(), vehicles.getFirst().getId());
+        assertEquals(0, vehicles.getFirst().getQuantityInStock());
     }
 }

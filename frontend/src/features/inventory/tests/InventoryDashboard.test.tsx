@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -40,10 +40,11 @@ const filteredVehicles = [
   },
 ];
 
-function renderAuthenticatedApp() {
+function renderAuthenticatedApp(role: 'CUSTOMER' | 'ADMIN' = 'CUSTOMER') {
   localStorage.setItem('accessToken', 'access-token');
   localStorage.setItem('refreshToken', 'refresh-token');
   localStorage.setItem('email', 'manager@example.com');
+  localStorage.setItem('role', role);
   setToken('access-token');
 
   return render(
@@ -51,6 +52,16 @@ function renderAuthenticatedApp() {
       <App />
     </AuthProvider>,
   );
+}
+
+async function findVehicleCard(make: string) {
+  const card = (await screen.findByText(make)).closest('article');
+
+  if (!card) {
+    throw new Error(`Expected ${make} to be rendered inside a vehicle card.`);
+  }
+
+  return card;
 }
 
 beforeAll(() => {
@@ -91,6 +102,87 @@ describe('inventory dashboard', () => {
     expect(screen.getByText('SUV')).not.toBeNull();
     expect(screen.getByText(/\$41,500/)).not.toBeNull();
     expect(screen.getByText(/0\s+in stock/i)).not.toBeNull();
+  });
+
+  it('disables the Purchase button for vehicles with zero stock', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp();
+
+    const outOfStockVehicle = await findVehicleCard('Ford');
+    const purchaseButton = within(outOfStockVehicle).getByRole('button', {
+      name: /purchase/i,
+    }) as HTMLButtonElement;
+
+    expect(purchaseButton.disabled).toBe(true);
+  });
+
+  it('enables the Purchase button for vehicles with stock above zero', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp();
+
+    const inStockVehicle = await findVehicleCard('Toyota');
+    const purchaseButton = within(inStockVehicle).getByRole('button', {
+      name: /purchase/i,
+    }) as HTMLButtonElement;
+
+    expect(purchaseButton.disabled).toBe(false);
+  });
+
+  it('does not show Purchase buttons for admins', async () => {
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+    );
+
+    renderAuthenticatedApp('ADMIN');
+
+    expect(await screen.findByText('Toyota')).not.toBeNull();
+    expect(screen.queryAllByRole('button', { name: /purchase/i })).toHaveLength(0);
+  });
+
+  it('purchases an in-stock vehicle and renders the decremented stock returned by the API', async () => {
+    let purchaseRequestAuthorization: string | null | undefined;
+    let purchaseRequestMethod: string | undefined;
+    let purchaseRequestUrl: string | undefined;
+
+    server.use(
+      http.get('http://localhost/api/vehicles', () => HttpResponse.json(vehicles)),
+      http.post('http://localhost/api/vehicles/:id/purchase', ({ request, params }) => {
+        purchaseRequestAuthorization = request.headers.get('authorization');
+        purchaseRequestMethod = request.method;
+        purchaseRequestUrl = request.url;
+
+        return HttpResponse.json({
+          ...vehicles[0],
+          id: params.id,
+          quantityInStock: 3,
+        });
+      }),
+    );
+
+    renderAuthenticatedApp();
+
+    const inStockVehicle = await findVehicleCard('Toyota');
+    fireEvent.click(
+      within(inStockVehicle).getByRole('button', {
+        name: /purchase/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(within(inStockVehicle).getByText(/3\s+in stock/i)).not.toBeNull();
+    });
+
+    expect(purchaseRequestUrl).toBeDefined();
+    expect(purchaseRequestMethod).toBe('POST');
+    expect(new URL(purchaseRequestUrl as string).pathname).toBe('/api/vehicles/vehicle-1/purchase');
+    expect(purchaseRequestAuthorization).toBe('Bearer access-token');
+    expect(screen.queryByText(/purchase flow coming soon/i)).toBeNull();
   });
 
   it('calls GET /api/vehicles with the authenticated access token', async () => {

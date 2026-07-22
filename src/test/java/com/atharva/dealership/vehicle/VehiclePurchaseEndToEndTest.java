@@ -32,12 +32,12 @@ class VehiclePurchaseEndToEndTest {
     @Autowired
     private VehicleRepository vehicleRepository;
 
-    private String authToken;
+    private String customerToken;
 
     @BeforeEach
     void clearData() {
         vehicleRepository.deleteAll();
-        authToken = jwtService.generateAccessToken("customer@example.com");
+        customerToken = jwtService.generateAccessToken("customer@example.com", "CUSTOMER");
     }
 
     @Test
@@ -45,7 +45,7 @@ class VehiclePurchaseEndToEndTest {
         Vehicle existingVehicle = saveVehicleWithQuantity(5);
 
         mockMvc.perform(post("/api/vehicles/{id}/purchase", existingVehicle.getId())
-                        .header(HttpHeaders.AUTHORIZATION, bearer(authToken)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(customerToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(existingVehicle.getId()))
                 .andExpect(jsonPath("$.make").value("Toyota"))
@@ -74,16 +74,29 @@ class VehiclePurchaseEndToEndTest {
         Vehicle existingVehicle = saveVehicleWithQuantity(0);
 
         mockMvc.perform(post("/api/vehicles/{id}/purchase", existingVehicle.getId())
-                        .header(HttpHeaders.AUTHORIZATION, bearer(authToken)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(customerToken)))
                 .andExpect(status().isBadRequest());
 
         Vehicle persistedVehicle = vehicleRepository.findById(existingVehicle.getId()).orElseThrow();
         assertEquals(0, persistedVehicle.getQuantityInStock());
 
         mockMvc.perform(get("/api/vehicles")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(authToken)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(customerToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0]").doesNotExist());
+    }
+
+    @Test
+    void purchaseVehicleAsAdminReturnsForbiddenAndDoesNotModifyVehicle() throws Exception {
+        Vehicle existingVehicle = saveVehicleWithQuantity(5);
+        String adminToken = jwtService.generateAccessToken("admin@example.com", "ADMIN");
+
+        mockMvc.perform(post("/api/vehicles/{id}/purchase", existingVehicle.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(adminToken)))
+                .andExpect(status().isForbidden());
+
+        Vehicle persistedVehicle = vehicleRepository.findById(existingVehicle.getId()).orElseThrow();
+        assertEquals(5, persistedVehicle.getQuantityInStock());
     }
 
     private Vehicle saveVehicleWithQuantity(int quantityInStock) {

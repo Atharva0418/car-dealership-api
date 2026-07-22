@@ -9,13 +9,21 @@ import {
 
 import { setToken } from '../api/tokenStore';
 
+type UserRole = 'CUSTOMER' | 'ADMIN';
+
 type AuthContextValue = {
   accessToken: string | null;
   refreshToken: string | null;
   email: string | null;
+  role: UserRole | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (accessToken: string, refreshToken: string, email: string) => void;
+  login: (
+    accessToken: string,
+    refreshToken: string,
+    email: string,
+    role?: UserRole,
+  ) => void;
   logout: () => void;
   updateAccessToken: (newAccessToken: string) => void;
 };
@@ -24,27 +32,41 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const canUseLocalStorage = () => typeof window !== 'undefined';
 
+function normalizeRole(role: string | null | undefined): UserRole {
+  return role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER';
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     if (!canUseLocalStorage()) {
       return;
     }
 
-    setAccessToken(localStorage.getItem('accessToken'));
+    const storedAccessToken = localStorage.getItem('accessToken');
+
+    setAccessToken(storedAccessToken);
     setRefreshToken(localStorage.getItem('refreshToken'));
     setEmail(localStorage.getItem('email'));
-    setToken(localStorage.getItem('accessToken'));
+    setRole(storedAccessToken ? normalizeRole(localStorage.getItem('role')) : null);
+    setToken(storedAccessToken);
   }, []);
 
   const login = useCallback(
-    (newAccessToken: string, newRefreshToken: string, newEmail: string) => {
+    (
+      newAccessToken: string,
+      newRefreshToken: string,
+      newEmail: string,
+      newRole: UserRole = 'CUSTOMER',
+    ) => {
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
       setEmail(newEmail);
+      setRole(newRole);
       setToken(newAccessToken);
 
       if (!canUseLocalStorage()) {
@@ -54,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('accessToken', newAccessToken);
       localStorage.setItem('refreshToken', newRefreshToken);
       localStorage.setItem('email', newEmail);
+      localStorage.setItem('role', newRole);
     },
     [],
   );
@@ -62,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setRefreshToken(null);
     setEmail(null);
+    setRole(null);
     setToken(null);
 
     if (!canUseLocalStorage()) {
@@ -71,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('email');
+    localStorage.removeItem('role');
   }, []);
 
   const updateAccessToken = useCallback((newAccessToken: string) => {
@@ -84,8 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('accessToken', newAccessToken);
   }, []);
 
-  const username = email?.split('@')[0] ?? '';
-  const isAdmin = username.toLowerCase().includes('admin');
+  const isAdmin = role === 'ADMIN';
 
   return (
     <AuthContext.Provider
@@ -93,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         refreshToken,
         email,
+        role,
         isAuthenticated: accessToken !== null,
         isAdmin,
         login,

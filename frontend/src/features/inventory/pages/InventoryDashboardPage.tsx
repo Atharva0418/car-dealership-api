@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ApiError } from '../../../shared/api/client';
-import { listVehicles, searchVehicles } from '../api/vehicles';
+import { useAuth } from '../../auth/context/AuthContext';
+import { listVehicles, purchaseVehicle, searchVehicles } from '../api/vehicles';
 import type { VehicleSearchFilters } from '../api/vehicles';
 import type { Vehicle } from '../api/types';
 import { VehicleFilterBar } from '../components/VehicleFilterBar';
@@ -74,8 +75,25 @@ function SkeletonCard() {
   );
 }
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+type VehicleCardProps = {
+  canPurchase: boolean;
+  onPurchase: (id: string) => Promise<void>;
+  vehicle: Vehicle;
+};
+
+function VehicleCard({ canPurchase, onPurchase, vehicle }: VehicleCardProps) {
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const isOutOfStock = vehicle.quantityInStock === 0;
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+
+    try {
+      await onPurchase(vehicle.id);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   return (
     <article className="group flex min-h-48 animate-[auth-panel-enter_220ms_ease-out] flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/5 transition duration-200 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-950/10">
@@ -104,16 +122,31 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       </div>
 
       <div className="mt-8 border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold uppercase text-slate-500">Listed price</p>
-        <p className="mt-1 text-3xl font-bold tracking-normal text-slate-950">
-          {currencyFormatter.format(vehicle.price)}
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Listed price</p>
+            <p className="mt-1 text-3xl font-bold tracking-normal text-slate-950">
+              {currencyFormatter.format(vehicle.price)}
+            </p>
+          </div>
+          {canPurchase ? (
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
+              disabled={isOutOfStock || isPurchasing}
+              onClick={() => void handlePurchase()}
+              type="button"
+            >
+              Purchase
+            </button>
+          ) : null}
+        </div>
       </div>
     </article>
   );
 }
 
 export function InventoryDashboardPage() {
+  const { isAdmin } = useAuth();
   const [status, setStatus] = useState<InventoryStatus>('loading');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -151,6 +184,16 @@ export function InventoryDashboardPage() {
       setErrorMessage(getErrorMessage(error));
       setStatus('error');
     }
+  }, []);
+
+  const handlePurchase = useCallback(async (id: string) => {
+    const purchasedVehicle = await purchaseVehicle(id);
+
+    setVehicles((currentVehicles) =>
+      currentVehicles.map((vehicle) =>
+        vehicle.id === purchasedVehicle.id ? purchasedVehicle : vehicle,
+      ),
+    );
   }, []);
 
   useEffect(() => {
@@ -227,7 +270,12 @@ export function InventoryDashboardPage() {
       {status === 'success' && vehicles.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            <VehicleCard
+              canPurchase={!isAdmin}
+              key={vehicle.id}
+              onPurchase={handlePurchase}
+              vehicle={vehicle}
+            />
           ))}
         </div>
       ) : null}

@@ -69,3 +69,9 @@ export function deleteVehicle(id: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+export function purchaseVehicle(id: string): Promise<Vehicle> {
+  return request<Vehicle>(`/vehicles/${id}/purchase`, {
+    method: 'POST',
+  });
+}

@@ -67,6 +67,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if ("ADMIN".equals(role)) {
             return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
+        if ("CUSTOMER".equals(role)) {
+            return List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+        }
         return List.of();
     }
 

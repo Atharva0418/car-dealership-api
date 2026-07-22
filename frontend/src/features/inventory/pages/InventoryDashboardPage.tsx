@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ApiError } from '../../../shared/api/client';
-import { listVehicles } from '../api/vehicles';
+import { listVehicles, searchVehicles } from '../api/vehicles';
+import type { VehicleSearchFilters } from '../api/vehicles';
 import type { Vehicle } from '../api/types';
+import { VehicleFilterBar } from '../components/VehicleFilterBar';
 
 type InventoryStatus = 'loading' | 'error' | 'success';
 
@@ -115,6 +117,7 @@ export function InventoryDashboardPage() {
   const [status, setStatus] = useState<InventoryStatus>('loading');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isFiltered, setIsFiltered] = useState(false);
 
   const fetchVehicles = useCallback(async () => {
     setStatus('loading');
@@ -124,6 +127,24 @@ export function InventoryDashboardPage() {
       const nextVehicles = await listVehicles();
 
       setVehicles(nextVehicles);
+      setIsFiltered(false);
+      setStatus('success');
+    } catch (error) {
+      setVehicles([]);
+      setErrorMessage(getErrorMessage(error));
+      setStatus('error');
+    }
+  }, []);
+
+  const handleSearch = useCallback(async (filters: VehicleSearchFilters) => {
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const nextVehicles = await searchVehicles(filters);
+
+      setVehicles(nextVehicles);
+      setIsFiltered(true);
       setStatus('success');
     } catch (error) {
       setVehicles([]);
@@ -152,6 +173,12 @@ export function InventoryDashboardPage() {
           </p>
         ) : null}
       </div>
+
+      <VehicleFilterBar
+        isLoading={status === 'loading'}
+        onReset={() => void fetchVehicles()}
+        onSearch={(filters) => void handleSearch(filters)}
+      />
 
       {status === 'loading' ? (
         <div aria-label="Loading inventory" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -190,8 +217,9 @@ export function InventoryDashboardPage() {
             Empty inventory
           </h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
-            No vehicles in inventory. Add your first listing to start managing
-            availability, pricing, and stock levels.
+            {isFiltered
+              ? 'No vehicles match the selected filters. Adjust your search to broaden the results.'
+              : 'No vehicles in inventory. Add your first listing to start managing availability, pricing, and stock levels.'}
           </p>
         </div>
       ) : null}

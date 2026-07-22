@@ -19,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /*
  * Red-phase assumptions for the production API:
@@ -332,6 +334,46 @@ class VehicleServiceTest {
 
         assertEquals(List.of(), result);
         verify(vehicleRepository, times(1)).findAll();
+    }
+
+    @Test
+    void deleteExistingVehicleDeletesVehicleById() {
+        long vehicleId = 42L;
+        Vehicle existingVehicle = new Vehicle(
+                vehicleId,
+                "Toyota",
+                "Camry",
+                "Sedan",
+                new BigDecimal("28000.00"),
+                5);
+        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
+
+        vehicleService.deleteById(vehicleId);
+
+        verify(vehicleRepository, times(1)).findById(vehicleId);
+        verify(vehicleRepository, times(1)).delete(existingVehicle);
+    }
+
+    @Test
+    void deleteMissingVehicleThrowsNotFoundAndDoesNotDeleteVehicle() {
+        long missingVehicleId = 404L;
+        when(vehicleRepository.findById(missingVehicleId)).thenReturn(Optional.empty());
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class,
+                () -> vehicleService.deleteById(missingVehicleId));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+        verify(vehicleRepository, times(1)).findById(missingVehicleId);
+        verify(vehicleRepository, never()).delete(any(Vehicle.class));
+    }
+
+    @Test
+    void deleteWithNonPositiveIdThrowsValidationErrorAndDoesNotCallRepository() {
+        assertThrows(ValidationError.class, () -> vehicleService.deleteById(0L));
+
+        verify(vehicleRepository, never()).findById(any(Long.class));
+        verify(vehicleRepository, never()).delete(any(Vehicle.class));
     }
 
     private CreateVehicleRequest validRequestWithMake(String make) {

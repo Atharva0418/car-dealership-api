@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -288,5 +289,46 @@ class VehicleControllerTest {
                 .andExpect(content().json("[]"));
 
         verify(vehicleService, times(1)).findAvailableVehicles();
+    }
+
+    @Test
+    void deleteVehicleWithExistingIdReturnsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/vehicles/{id}", 42L))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        verify(vehicleService, times(1)).deleteById(42L);
+    }
+
+    @Test
+    void deleteMissingVehicleReturnsNotFound() throws Exception {
+        org.mockito.Mockito.doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found."))
+                .when(vehicleService)
+                .deleteById(404L);
+
+        mockMvc.perform(delete("/api/vehicles/{id}", 404L))
+                .andExpect(status().isNotFound());
+
+        verify(vehicleService, times(1)).deleteById(404L);
+    }
+
+    @Test
+    void deleteVehicleWithInvalidIdFormatReturnsBadRequestAndDoesNotCallService() throws Exception {
+        mockMvc.perform(delete("/api/vehicles/not-a-number"))
+                .andExpect(status().isBadRequest());
+
+        verify(vehicleService, never()).deleteById(any(Long.class));
+    }
+
+    @Test
+    void deleteVehicleWithNonPositiveIdReturnsBadRequest() throws Exception {
+        org.mockito.Mockito.doThrow(new ValidationError("Vehicle id must be greater than zero."))
+                .when(vehicleService)
+                .deleteById(0L);
+
+        mockMvc.perform(delete("/api/vehicles/{id}", 0L))
+                .andExpect(status().isBadRequest());
+
+        verify(vehicleService, times(1)).deleteById(0L);
     }
 }

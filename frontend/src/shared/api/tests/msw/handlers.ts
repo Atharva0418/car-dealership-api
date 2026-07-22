@@ -60,24 +60,30 @@ export const handlers = [
     await snapshotRequest(request);
 
     return HttpResponse.json({
-      token: 'access-token',
+      accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresInSeconds: 900,
     });
   }),
   http.post('*/api/auth/register', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({
-      token: 'access-token',
+      accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresInSeconds: 900,
     });
   }),
   http.post('*/api/auth/refresh', async ({ request }) => {
     await snapshotRequest(request);
 
     return HttpResponse.json({
-      token: 'new-access-token',
+      accessToken: 'new-access-token',
       refreshToken: 'new-refresh-token',
+      tokenType: 'Bearer',
+      expiresInSeconds: 900,
     });
   }),
   http.get('http://localhost/api/vehicles', async ({ request }) => {
@@ -91,6 +97,7 @@ export const handlers = [
         year: 2024,
         price: 28000,
         category: 'sedan',
+        quantityInStock: 4,
       },
     ]);
   }),
@@ -104,6 +111,7 @@ export const handlers = [
       year: 2024,
       price: 28000,
       category: 'sedan',
+      quantityInStock: 4,
     });
   }),
   http.put('http://localhost/api/vehicles/:id', async ({ request, params }) => {
@@ -116,6 +124,7 @@ export const handlers = [
       year: 2024,
       price: 29000,
       category: 'sedan',
+      quantityInStock: 4,
     });
   }),
   http.delete('http://localhost/api/vehicles/:id', async ({ request }) => {

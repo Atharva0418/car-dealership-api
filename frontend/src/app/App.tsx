@@ -1,6 +1,6 @@
 import { AuthPage } from '../features/auth/components/AuthPage';
 import { useAuth } from '../features/auth/context/AuthContext';
-import { InventoryPlaceholderPage } from '../features/inventory/pages/InventoryPlaceholderPage';
+import { InventoryDashboardPage } from '../features/inventory/pages/InventoryDashboardPage';
 import { AppLayout } from '../shared/components/layout/AppLayout';
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
 
   return (
     <AppLayout>
-      <InventoryPlaceholderPage />
+      <InventoryDashboardPage />
     </AppLayout>
   );
 }

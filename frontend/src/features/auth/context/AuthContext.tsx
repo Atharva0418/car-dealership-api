@@ -7,6 +7,8 @@ import {
   useState,
 } from 'react';
 
+import { setToken } from '../api/tokenStore';
+
 type AuthContextValue = {
   accessToken: string | null;
   refreshToken: string | null;
@@ -35,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(localStorage.getItem('accessToken'));
     setRefreshToken(localStorage.getItem('refreshToken'));
     setEmail(localStorage.getItem('email'));
+    setToken(localStorage.getItem('accessToken'));
   }, []);
 
   const login = useCallback(
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccessToken(newAccessToken);
       setRefreshToken(newRefreshToken);
       setEmail(newEmail);
+      setToken(newAccessToken);
 
       if (!canUseLocalStorage()) {
         return;
@@ -58,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setRefreshToken(null);
     setEmail(null);
+    setToken(null);
 
     if (!canUseLocalStorage()) {
       return;
@@ -70,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateAccessToken = useCallback((newAccessToken: string) => {
     setAccessToken(newAccessToken);
+    setToken(newAccessToken);
 
     if (!canUseLocalStorage()) {
       return;

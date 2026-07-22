@@ -10,8 +10,10 @@ type RefreshPayload = {
 };
 
 type AuthResponse = {
-  token: string;
+  accessToken: string;
   refreshToken: string;
+  tokenType: string;
+  expiresInSeconds: number;
 };
 
 export function register(payload: AuthCredentials): Promise<AuthResponse> {

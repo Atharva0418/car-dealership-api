@@ -1,13 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 import { ApiError } from '../../../shared/api/client';
 import { useAuth } from '../../auth/context/AuthContext';
-import { listVehicles, purchaseVehicle, searchVehicles } from '../api/vehicles';
+import { createVehicle, listVehicles, purchaseVehicle, searchVehicles } from '../api/vehicles';
 import type { VehicleSearchFilters } from '../api/vehicles';
-import type { Vehicle } from '../api/types';
+import type { Vehicle, VehicleInput } from '../api/types';
 import { VehicleFilterBar } from '../components/VehicleFilterBar';
 
 type InventoryStatus = 'loading' | 'error' | 'success';
+
+type VehicleAddFormState = {
+  make: string;
+  model: string;
+  category: string;
+  price: string;
+  quantityInStock: string;
+};
+
+type VehicleAddFormErrors = Partial<Record<keyof VehicleAddFormState, string>>;
+
+const initialVehicleAddFormState: VehicleAddFormState = {
+  make: '',
+  model: '',
+  category: '',
+  price: '',
+  quantityInStock: '',
+};
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
@@ -72,6 +90,200 @@ function SkeletonCard() {
         <div className="h-7 w-24 rounded-full bg-slate-200" />
       </div>
     </div>
+  );
+}
+
+type VehicleAddFormProps = {
+  onCreated: () => Promise<void>;
+};
+
+function getRequiredError(label: string, value: string): string | undefined {
+  return value.trim() ? undefined : `${label} is required`;
+}
+
+function validateVehicleAddForm(form: VehicleAddFormState): VehicleAddFormErrors {
+  const errors: VehicleAddFormErrors = {
+    make: getRequiredError('Make', form.make),
+    model: getRequiredError('Model', form.model),
+    category: getRequiredError('Category', form.category),
+    price: getRequiredError('Price', form.price),
+    quantityInStock: getRequiredError('Quantity in stock', form.quantityInStock),
+  };
+
+  if (!errors.price && Number(form.price) < 0) {
+    errors.price = 'Price must be zero or greater';
+  }
+
+  if (!errors.quantityInStock && Number(form.quantityInStock) < 0) {
+    errors.quantityInStock = 'Quantity in stock must be zero or greater';
+  }
+
+  return Object.fromEntries(
+    Object.entries(errors).filter(([, message]) => message !== undefined),
+  ) as VehicleAddFormErrors;
+}
+
+function buildVehicleInput(form: VehicleAddFormState): VehicleInput {
+  return {
+    make: form.make.trim(),
+    model: form.model.trim(),
+    category: form.category.trim(),
+    price: Number(form.price),
+    quantityInStock: Number(form.quantityInStock),
+  };
+}
+
+function VehicleAddForm({ onCreated }: VehicleAddFormProps) {
+  const [form, setForm] = useState<VehicleAddFormState>(initialVehicleAddFormState);
+  const [errors, setErrors] = useState<VehicleAddFormErrors>({});
+  const [apiError, setApiError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateField = (key: keyof VehicleAddFormState, value: string) => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [key]: value,
+    }));
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      [key]: undefined,
+    }));
+    setApiError('');
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextErrors = validateVehicleAddForm(form);
+    setErrors(nextErrors);
+    setApiError('');
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createVehicle(buildVehicleInput(form));
+      setForm(initialVehicleAddFormState);
+      await onCreated();
+    } catch (error) {
+      setApiError(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form
+      aria-label="Add vehicle"
+      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5"
+      onSubmit={(event) => void handleSubmit(event)}
+    >
+      <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase text-cyan-700">Admin panel</p>
+          <h2 className="mt-1 text-xl font-bold tracking-normal text-slate-950">
+            Add vehicle
+          </h2>
+        </div>
+        <button
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-cyan-700 px-5 text-sm font-bold text-white shadow-sm shadow-cyan-950/20 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-cyan-400"
+          disabled={isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? 'Adding...' : 'Add vehicle'}
+        </button>
+      </div>
+
+      {apiError ? (
+        <div
+          className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+          role="alert"
+        >
+          {apiError}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-slate-500">Make</span>
+          <input
+            aria-invalid={errors.make ? 'true' : 'false'}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+            onChange={(event) => updateField('make', event.target.value)}
+            placeholder="Honda"
+            type="text"
+            value={form.make}
+          />
+          {errors.make ? <p className="mt-1 text-xs font-semibold text-red-600">{errors.make}</p> : null}
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-slate-500">Model</span>
+          <input
+            aria-invalid={errors.model ? 'true' : 'false'}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+            onChange={(event) => updateField('model', event.target.value)}
+            placeholder="Civic"
+            type="text"
+            value={form.model}
+          />
+          {errors.model ? <p className="mt-1 text-xs font-semibold text-red-600">{errors.model}</p> : null}
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-slate-500">Category</span>
+          <select
+            aria-invalid={errors.category ? 'true' : 'false'}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+            onChange={(event) => updateField('category', event.target.value)}
+            value={form.category}
+          >
+            <option value="">Select category</option>
+            <option value="Sedan">Sedan cars</option>
+            <option value="SUV">SUVs</option>
+            <option value="Hatchback">Hatchbacks</option>
+          </select>
+          {errors.category ? (
+            <p className="mt-1 text-xs font-semibold text-red-600">{errors.category}</p>
+          ) : null}
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-slate-500">Price</span>
+          <input
+            aria-invalid={errors.price ? 'true' : 'false'}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+            min="0"
+            onChange={(event) => updateField('price', event.target.value)}
+            placeholder="24500"
+            type="number"
+            value={form.price}
+          />
+          {errors.price ? <p className="mt-1 text-xs font-semibold text-red-600">{errors.price}</p> : null}
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-slate-500">Quantity in stock</span>
+          <input
+            aria-invalid={errors.quantityInStock ? 'true' : 'false'}
+            className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+            min="0"
+            onChange={(event) => updateField('quantityInStock', event.target.value)}
+            placeholder="7"
+            type="number"
+            value={form.quantityInStock}
+          />
+          {errors.quantityInStock ? (
+            <p className="mt-1 text-xs font-semibold text-red-600">
+              {errors.quantityInStock}
+            </p>
+          ) : null}
+        </label>
+      </div>
+    </form>
   );
 }
 
@@ -222,6 +434,8 @@ export function InventoryDashboardPage() {
         onReset={() => void fetchVehicles()}
         onSearch={(filters) => void handleSearch(filters)}
       />
+
+      {isAdmin ? <VehicleAddForm onCreated={fetchVehicles} /> : null}
 
       {status === 'loading' ? (
         <div aria-label="Loading inventory" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

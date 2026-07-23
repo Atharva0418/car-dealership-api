@@ -29,6 +29,7 @@ export function Header({ currentView = 'inventory', onViewChange }: HeaderProps)
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
           <div className="flex gap-2">
+            {showCustomerNavigation ? (
             <button
               className={navButtonClass('inventory')}
               onClick={() => onViewChange?.('inventory')}
@@ -36,6 +37,8 @@ export function Header({ currentView = 'inventory', onViewChange }: HeaderProps)
             >
               Inventory
             </button>
+            ): null}
+            
             {showCustomerNavigation ? (
               <button
                 className={navButtonClass('purchases')}

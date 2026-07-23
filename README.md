@@ -17,18 +17,18 @@ Password: admin123
 
 ### Architecture
 
-Architecture diagram
+![Architecture diagram](docs/images/architecture.png)
 
 ### Screenshots
 
-Screenshot 1 Screenshot 2
+![Screenshot 1](docs/images/ss1.png) ![Screenshot 2](docs/images/ss2.png)
 
-Screenshot 3 Screenshot 4
+![Screenshot 3](docs/images/ss3.png) ![Screenshot 4](docs/images/ss4.png)
 
-Screenshot 5
+![Screenshot 5](docs/images/ss5.png)
+
 
 ## Tech Stack
-
 
 
 ### Backend
@@ -265,7 +265,7 @@ My Workflow:
 
 Honestly, I used AI (Codex) for the entire project starting from initial structure to even this readme. However, I have not been blindly committing the changes Codex gave me. I reviewed the changes, added my "taste" and tested them manually in Postman for backend and in browser for frontend. Many times it drifted from the goal of implementing the best practices and I had to refactor it (e.g. JWT refactor, directory structure).   
 
-Leveraging Codex allowed me to boost my efficiency in making the full stack web. If I had tried to manually write the test cases and code, I wouldn't have been able to complete the assessment on time.  This adds more room for error if I do not check the code changes thoroughly, but the trade off is worth it given that I am careful enough.
+Leveraging Codex allowed me to boost my efficiency in making the full stack web. If I had tried to manually write the test cases and code, I wouldn't have been able to complete the assessment on time.   
 
 I also used Claude for brain storming , approaches , planning and prompts for Codex ( why write prompts manually when AI can do that for you? haha). 
 
@@ -273,4 +273,3 @@ I also used Claude for brain storming , approaches , planning and prompts for Co
 git commit -m "docs: add my ai usage in readme.md
 Co-authored by Me."
 ```
-

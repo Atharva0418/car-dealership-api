@@ -17,19 +17,18 @@ Password: admin123
 
 ### Architecture
 
-![Architecture diagram](docs/images/architecture.png)
+Architecture diagram
 
 ### Screenshots
 
-![Screenshot 1](docs/images/ss1.png)
+Screenshot 1 Screenshot 2
 
-![Screenshot 2](docs/images/ss2.png)
+Screenshot 3 Screenshot 4
 
-![Screenshot 3](docs/images/ss3.png)
-
-![Screenshot 4](docs/images/ss4.png)
+Screenshot 5
 
 ## Tech Stack
+
 
 
 ### Backend
@@ -206,6 +205,7 @@ Authorization: Bearer <access-token>
 | `DELETE` | `/api/vehicles/{id}`          | Admin         | Delete a vehicle                                          |
 | `POST`   | `/api/vehicles/{id}/restock`  | Admin         | Add stock to a vehicle                                    |
 | `POST`   | `/api/vehicles/{id}/purchase` | Customer      | Purchase one unit of a vehicle                            |
+| `GET`    | `/api/purchases/me`           | Customer      | List the authenticated customer's purchases               |
 
 
 
@@ -256,7 +256,7 @@ Codex: Used for implementation
 
 My Workflow:
 
-- I start by brainstorming alone, trying to think of as many  test cases as I can. 
+- I start by brainstorming alone, trying to think of as many test cases as I can. 
 - Then I ask claude or codex to suggest test cases and compare them with my own. This allows me to recognize the test cases I have missed, which are important and which are optional.
 - I take these test cases and ask claude to generate a prompt for Codex, asking to only write the test cases and not write any implementation code
 - After the test cases have been written , I ask codex to write minimal code to pass those test cases.
@@ -265,7 +265,7 @@ My Workflow:
 
 Honestly, I used AI (Codex) for the entire project starting from initial structure to even this readme. However, I have not been blindly committing the changes Codex gave me. I reviewed the changes, added my "taste" and tested them manually in Postman for backend and in browser for frontend. Many times it drifted from the goal of implementing the best practices and I had to refactor it (e.g. JWT refactor, directory structure).   
 
-Leveraging Codex allowed me to boost my efficiency in making the full stack web. If I had tried to manually write the test cases and code, I wouldn't have been able to complete it on time.   
+Leveraging Codex allowed me to boost my efficiency in making the full stack web. If I had tried to manually write the test cases and code, I wouldn't have been able to complete the assessment on time.  This adds more room for error if I do not check the code changes thoroughly, but the trade off is worth it given that I am careful enough.
 
 I also used Claude for brain storming , approaches , planning and prompts for Codex ( why write prompts manually when AI can do that for you? haha). 
 
@@ -273,3 +273,4 @@ I also used Claude for brain storming , approaches , planning and prompts for Co
 git commit -m "docs: add my ai usage in readme.md
 Co-authored by Me."
 ```
+

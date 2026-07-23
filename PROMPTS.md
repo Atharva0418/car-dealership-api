@@ -1036,12 +1036,47 @@ A running record of prompts used to drive this project via strict TDD (red-green
 > Implement "Sign in to browse cars and purchase with ease".
 
 
+
+# Feature - My Purchases
+
+## Backend 
+
+> I want to implement my purchases feature in which when a user click on the purchase button, it is added to a my purchase section of that user only. This data should be persisted in the db. User should be able to view the purchases. My purchases should fetch the data from the db. How will the db desgin change?
+
+> Suggest important test cases in the backend for this feature.
+
+### Test Case Prompts (RED)
+
+> Write 3 types of failing test cases i.e. unit, integration and end to end test cases for the cases u described earlier.  Make sure these test cases cover important edgse cases. Do not write any implementation logic or create controller, service or repository files. Follow strict Test Driven Development. Follow the best indsutry practices and naming conventions.
+
+### Implementation Prompts (GREEN):
+
+> All test cases are currently failing (red). Write the minimum production code needed to make them pass — nothing more. Add logs at the start of each method and upon successful execution of that method, also where necessary for debug or error purposes. Also handle the errors in the global exception handler. Make sure to follow best industry practices and naming conventions.
+
+## Frontend
+
+> The backend endpoint is working, Suggest a plan for implementing the frontend my purchase button.
+
+### Test Cases Prompts (RED)
+
+> Write all the failing test cases. The test cases should be meaningful. Do not write any implementation code for this feature. Follow industry practices , naming conventions and directory structure. After I approve then only write the implementation code.
+
+### Implementation Prompts (GREEN)
+
+> All test cases are currently failing (red). Write the minimum production code needed to make them pass — nothing more. Make sure to follow best industry practices and naming conventions.
+
+> The UI should be consistent with the current UI theme, do not cut slack in the designing the UI. It should feel modern, responsive and provide a great user experience.
+
+# Fix : Delete button UI
+
+> In the vehicle card, if the price has around 8-9 figures,the delete button goes slightly out of the vehicle card. Show me the cause of this error. Do not fix it just yet.
+
+
 # README.md
 
 > A comprehensive README.md file that includes: 
 > - A clear explanation of the project.
 > - Detailed instructions on how to set up and run the project locally (both backend and frontend).
-> - The mandatory "My AI Usage" section.
 > Don't implement the readme, show me its content.
 > 
 > Add deployment information:

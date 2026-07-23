@@ -73,6 +73,17 @@ public class VehicleService {
         log.info("Vehicle deletion completed successfully for vehicle id: {}", id);
     }
 
+    public Vehicle findById(Long id) {
+        log.info("Starting vehicle lookup for vehicle id: {}", id);
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Vehicle lookup failed because vehicle id {} was not found", id);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found.");
+                });
+        log.info("Vehicle lookup completed successfully for vehicle id: {}", id);
+        return vehicle;
+    }
+
     public Vehicle purchase(Long id) {
         log.info("Starting vehicle purchase for vehicle id: {}", id);
         if (id == null || id <= 0) {

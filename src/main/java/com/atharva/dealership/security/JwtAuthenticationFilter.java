@@ -88,6 +88,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && request.getRequestURI().endsWith("/purchase")) {
             return HttpServletResponse.SC_UNAUTHORIZED;
         }
+        if ("GET".equals(request.getMethod()) && "/api/purchases/me".equals(request.getRequestURI())) {
+            return HttpServletResponse.SC_UNAUTHORIZED;
+        }
         if ("POST".equals(request.getMethod())
                 && request.getRequestURI().startsWith("/api/vehicles/")
                 && request.getRequestURI().endsWith("/restock")) {

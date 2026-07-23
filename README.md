@@ -1,4 +1,4 @@
-# Car Dealership API
+# Car Dealership Inventory System
 
 A full-stack car dealership inventory application with a Spring Boot backend and a React frontend.
 

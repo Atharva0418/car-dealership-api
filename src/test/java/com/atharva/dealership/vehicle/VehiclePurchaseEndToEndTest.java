@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.atharva.dealership.auth.JwtService;
+import com.atharva.dealership.purchase.PurchaseRepository;
+import com.atharva.dealership.user.User;
+import com.atharva.dealership.user.UserRepository;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,11 +35,20 @@ class VehiclePurchaseEndToEndTest {
     @Autowired
     private VehicleRepository vehicleRepository;
 
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     private String customerToken;
 
     @BeforeEach
     void clearData() {
+        purchaseRepository.deleteAll();
         vehicleRepository.deleteAll();
+        userRepository.deleteAll();
+        userRepository.save(new User("customer@example.com", "$2a$10$customer-password"));
         customerToken = jwtService.generateAccessToken("customer@example.com", "CUSTOMER");
     }
 

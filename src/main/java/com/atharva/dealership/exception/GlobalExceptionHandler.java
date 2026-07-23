@@ -65,8 +65,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessError(DataAccessException error) {
-        log.error("Vehicle data access error", error);
+        log.error("Data access error", error);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Vehicle data could not be retrieved.");
+                .body("Data could not be retrieved.");
     }
 }

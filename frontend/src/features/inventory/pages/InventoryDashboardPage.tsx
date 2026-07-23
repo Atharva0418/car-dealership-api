@@ -551,14 +551,14 @@ function VehicleCard({
       </div>
 
       <div className="mt-8 border-t border-slate-100 pt-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-slate-500">Listed price</p>
-            <p className="mt-1 text-3xl font-bold tracking-normal text-slate-950">
+            <p className="mt-1 break-words text-3xl font-bold tracking-normal text-slate-950">
               {currencyFormatter.format(vehicle.price)}
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             {canPurchase ? (
               <button
                 className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-950/10 transition hover:bg-cyan-800 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"

@@ -135,4 +135,19 @@ export const handlers = [
 
     return new HttpResponse(null, { status: 204 });
   }),
+  http.get('http://localhost/api/purchases/me', async ({ request }) => {
+    await snapshotRequest(request);
+
+    return HttpResponse.json([
+      {
+        id: 'purchase-1',
+        vehicleId: 'vehicle-1',
+        make: 'Toyota',
+        model: 'Camry',
+        category: 'Sedan',
+        price: 28000,
+        purchasedAt: '2026-07-23T05:00:00Z',
+      },
+    ]);
+  }),
 ];

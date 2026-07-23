@@ -3,12 +3,15 @@ package com.atharva.dealership.vehicle;
 import com.atharva.dealership.dto.CreateVehicleRequest;
 import com.atharva.dealership.dto.RestockVehicleRequest;
 import com.atharva.dealership.exception.ValidationError;
+import com.atharva.dealership.purchase.PurchaseService;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,9 +28,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final PurchaseService purchaseService;
+
+    @Autowired
+    public VehicleController(VehicleService vehicleService, PurchaseService purchaseService) {
+        this.vehicleService = vehicleService;
+        this.purchaseService = purchaseService;
+    }
 
     public VehicleController(VehicleService vehicleService) {
-        this.vehicleService = vehicleService;
+        this(vehicleService, null);
     }
 
     @PostMapping
@@ -73,9 +83,10 @@ public class VehicleController {
     }
 
     @PostMapping("/{id}/purchase")
-    public ResponseEntity<Vehicle> purchase(@PathVariable Long id) {
+    public ResponseEntity<Vehicle> purchase(@PathVariable Long id, Authentication authentication) {
         log.info("Received vehicle purchase request for vehicle id: {}", id);
-        Vehicle vehicle = vehicleService.purchase(id);
+        purchaseService.purchaseVehicle(id, authentication.getName());
+        Vehicle vehicle = vehicleService.findById(id);
         log.info("Vehicle purchase request handled successfully for vehicle id: {}", vehicle.getId());
         return ResponseEntity.ok(vehicle);
     }
